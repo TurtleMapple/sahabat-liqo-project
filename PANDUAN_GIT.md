@@ -90,6 +90,31 @@ git commit -m "Deskripsi perubahan"
 git push
 ```
 
+## Mengubah Remote Repository ke Repository Baru
+
+### Jika ingin push ke repository yang berbeda:
+
+1. **Hapus remote origin lama:**
+```bash
+git remote remove origin
+```
+
+2. **Tambahkan remote origin baru:**
+```bash
+git remote add origin https://github.com/username/repository-name.git
+```
+
+3. **Push ke repository baru:**
+```bash
+git push -u origin main
+```
+
+**Atau langsung ubah URL remote (tanpa hapus dulu):**
+```bash
+git remote set-url origin https://github.com/username/repository-name.git
+git push -u origin main
+```
+
 ## Troubleshooting
 
 ### Jika terjadi error "remote origin already exists"
@@ -106,6 +131,20 @@ git remote set-url origin https://github.com/username/repository-name.git
 ### Melihat remote yang terpasang
 ```bash
 git remote -v
+```
+
+### Jika terjadi error "remote contains work that you do not have locally"
+Ini terjadi karena repository remote memiliki commit yang berbeda dengan local. Solusinya:
+
+**Opsi 1: Force push (HATI-HATI! Ini akan menimpa semua commit di remote)**
+```bash
+git push -u origin main --force
+```
+
+**Opsi 2: Pull dulu lalu merge (Lebih aman)**
+```bash
+git pull origin main --allow-unrelated-histories
+git push -u origin main
 ```
 
 ## Struktur Project
