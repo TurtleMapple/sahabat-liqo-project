@@ -1,0 +1,77 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.backup
+.env.production
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+public/build/
+public/hot/
+public/storage/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+laravel.log
+
+# IDE
+.vscode/
+.idea/
+.fleet/
+.nova/
+.phpunit.cache/
+.phpactor.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Cache
+.phpunit.result.cache
+*.cache
+.cache/
+
+# Storage (keep structure but ignore files)
+storage/app/public/*
+!storage/app/public/.gitignore
+storage/logs/*
+!storage/logs/.gitignore
+storage/framework/cache/*
+!storage/framework/cache/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+
+# Laravel specific
+Homestead.json
+Homestead.yaml
+auth.json
+/zed
+
+# Temporary files
+*-p/
+*.tmp
+*.temp
+

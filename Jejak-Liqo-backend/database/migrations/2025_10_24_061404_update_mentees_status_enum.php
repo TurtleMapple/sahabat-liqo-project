@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        // Update existing 'Lulus' records to 'Non-Aktif'
+        DB::table('mentees')->where('status', 'Lulus')->update(['status' => 'Non-Aktif']);
+        
+        // Modify the enum column
+        Schema::table('mentees', function (Blueprint $table) {
+            $table->enum('status', ['Aktif', 'Non-Aktif'])->default('Aktif')->change();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('mentees', function (Blueprint $table) {
+            $table->enum('status', ['Aktif', 'Non-Aktif', 'Lulus'])->default('Aktif')->change();
+        });
+    }
+};
