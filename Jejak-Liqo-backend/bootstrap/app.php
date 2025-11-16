@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureTokenNotExpired;
+use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsMentor;
+use App\Http\Middleware\IsSuperAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // 1. Daftarkan alias agar bisa dipanggil lewat string di route
         $middleware->alias([
             'token.valid' => EnsureTokenNotExpired::class,
+            'is_admin' => IsAdmin::class,
+            'is_mentor' => IsMentor::class,
+            'is_super_admin' => IsSuperAdmin::class,
         ]);
 
         // 2. Tambahkan ke group API agar otomatis diterapkan ke semua route api

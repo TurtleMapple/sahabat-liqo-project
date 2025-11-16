@@ -13,7 +13,9 @@ import {
   Calendar,
   UsersRound,
   Megaphone,
-  ChevronRight
+  Settings,
+  ChevronRight,
+  User
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' }) => {
@@ -23,12 +25,12 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' 
   
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', active: activeMenu === 'Dashboard', path: '/admin/dashboard' },
-    { icon: Users, label: 'Kelola Mentee', active: activeMenu === 'Kelola Mentee', path: '/admin/kelola-mentee' },
+    { icon: User, label: 'Kelola Mentee', active: activeMenu === 'Kelola Mentee', path: '/admin/kelola-mentee' },
     { icon: UserCheck, label: 'Kelola Mentor', active: activeMenu === 'Kelola Mentor', path: '/admin/kelola-mentor' },
     { icon: FileText, label: 'Kelola Laporan', active: activeMenu === 'Kelola Laporan', path: '/admin/kelola-laporan' },
     { icon: Calendar, label: 'Catatan Pertemuan', active: activeMenu === 'Catatan Pertemuan', path: '/admin/catatan-pertemuan' },
     { icon: UsersRound, label: 'Kelola Kelompok', active: activeMenu === 'Kelola Kelompok', path: '/admin/kelola-kelompok' },
-    { icon: Megaphone, label: 'Kelola Pengumuman', active: activeMenu === 'Kelola Pengumuman', path: '/admin/kelola-pengumuman' }
+    { icon: Megaphone, label: 'Kelola Pengumuman', active: activeMenu === 'Kelola Pengumuman', path: '/admin/kelola-pengumuman' },
   ];
 
   return (

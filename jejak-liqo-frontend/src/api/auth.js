@@ -31,7 +31,29 @@ export const login = async (email, password, retryCount = 0) => {
       return login(email, password, retryCount + 1);
     }
     
-    console.error('Login gagal:', error.response ? error.response.data : error);
+    // Enhanced error handling
+    const errorData = error.response?.data;
+    const status = error.response?.status;
+    
+    console.error('Login gagal:', errorData || error);
+    
+    // Handle specific error types
+    if (status === 500) {
+      const errorMessage = errorData?.message || 'Server error';
+      if (errorMessage.includes('Cannot redeclare')) {
+        throw new Error('Server sedang dalam perbaikan. Silakan coba lagi nanti.');
+      }
+      throw new Error('Terjadi kesalahan server. Silakan coba lagi.');
+    }
+    
+    if (status === 422) {
+      throw new Error('Email atau password tidak valid.');
+    }
+    
+    if (status === 401) {
+      throw new Error('Email atau password salah.');
+    }
+    
     throw error;
   }
 };
@@ -85,3 +107,5 @@ export const validateToken = async () => {
     throw error;
   }
 };
+
+

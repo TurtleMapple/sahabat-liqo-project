@@ -18,11 +18,12 @@ class Meeting extends Model
         'topic',
         'notes',
         'meeting_type',
-        'photo',
+        'photos',
     ];
 
     protected $casts = [
         'meeting_date' => 'datetime',
+        'photos' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

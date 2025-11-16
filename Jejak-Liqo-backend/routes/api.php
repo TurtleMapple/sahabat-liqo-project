@@ -65,24 +65,20 @@ Route::middleware(['auth:sanctum', 'token.valid'])->group(function () {
         Route::get('groups/mentees-for-form', [GroupController::class, 'getMenteesForForm']);
         Route::get('groups/mentor-gender/{mentorId}', [GroupController::class, 'getMentorGender']);
         
-        // Edit group specific routes
         Route::get('groups/{group}/edit-mentors', [GroupController::class, 'getMentorsForEdit']);
         Route::get('groups/{group}/edit-mentees', [GroupController::class, 'getMenteesForEdit']);
         
-        // Trashed groups routes
         Route::get('groups/trashed', [GroupController::class, 'trashed']);
         Route::post('groups/{id}/restore', [GroupController::class, 'restore']);
         Route::delete('groups/{id}/force', [GroupController::class, 'forceDelete']);
         
         Route::apiResource('groups', GroupController::class);
         
-        // Secure mentee management
         Route::get('groups/{group}/mentees', [GroupController::class, 'getGroupMentees']);
         Route::post('groups/{group}/mentees', [GroupController::class, 'addMenteesToGroup']);
         Route::delete('groups/{group}/mentees', [GroupController::class, 'removeMenteesFromGroup']);
         Route::put('groups/{group}/mentees/move', [GroupController::class, 'moveMentees']);
         
-        // Legacy methods (deprecated)
         Route::post('groups/{group}/mentees-legacy', [GroupController::class, 'addMentees']);
         Route::delete('groups/{group}/mentees-legacy', [GroupController::class, 'removeMentees']);
     });
@@ -150,7 +146,7 @@ Route::middleware(['auth:sanctum', 'token.valid'])->group(function () {
     Route::get('reports/least-active-mentors', [ReportController::class, 'getLeastActiveMentors']);
     Route::get('reports/mentee-stats/{menteeId}', [ReportController::class, 'getMenteeStats']);
 
-    // Admins - Super Admin Only (specific routes first)
+    // Admins - Super Admin Only
     Route::get('admins/debug', [AdminController::class, 'debug'])->middleware(IsSuperAdmin::class);
     Route::get('admins/trashed', [AdminController::class, 'trashed'])->middleware(IsSuperAdmin::class);
     Route::post('admins/{id}/restore', [AdminController::class, 'restore'])->middleware(IsSuperAdmin::class);
@@ -164,7 +160,40 @@ Route::middleware(['auth:sanctum', 'token.valid'])->group(function () {
     Route::put('super-admins/{superAdmin}/unblock', [SuperAdminController::class, 'unblock'])->middleware(IsSuperAdmin::class);
     Route::apiResource('super-admins', SuperAdminController::class)->middleware(IsSuperAdmin::class);
 
-    // Tambahkan route baru di sini jika diperlukan
-    // Route::get('/route-baru', [Controller::class, 'method']);
+    // ========================================================================
+    // AWAL DARI BLOK KODE KEDUA YANG DIMASUKKAN
+    // ========================================================================
+    
+    // Dashboard Mentor - DENGAN middleware mentor
+    Route::prefix('mentor')->middleware('is_mentor')->group(function () {
+        Route::get('/profile', [MentorController::class, 'getProfile']);
+        Route::put('/profile', [MentorController::class, 'updateProfile']);
+        Route::get('/groups', [MentorController::class, 'getGroups']);
+        Route::get('/groups/trashed', [MentorController::class, 'getTrashedGroups']);
+        Route::post('/groups', [MentorController::class, 'createGroup']);
+        Route::get('/groups/{groupId}', [MentorController::class, 'getGroupDetail']);
+        Route::get('/groups/{groupId}/mentees', [MentorController::class, 'getGroupMentees']);
+        Route::get('/groups/{groupId}/all-mentees', [MentorController::class, 'getGroupAllMentees']);
+        Route::put('/groups/{groupId}', [MentorController::class, 'updateGroup']);
+        Route::delete('/groups/{groupId}', [MentorController::class, 'deleteGroup']);
+        Route::post('/groups/{groupId}/restore', [MentorController::class, 'restoreGroup']);
+        Route::post('/groups/{groupId}/mentees', [MentorController::class, 'addMentees']);
+        Route::patch('/groups/{groupId}/add-mentees', [MentorController::class, 'addExistingMenteesToGroup']);
+        Route::put('/groups/{groupId}/move-mentees', [MentorController::class, 'moveMentees']);
+        Route::get('/meetings', [MentorController::class, 'getMeetings']);
+        Route::get('/meetings/trashed', [MentorController::class, 'getTrashedMeetings']);
+        Route::get('/meetings/{meetingId}', [MentorController::class, 'getMeetingDetail']);
+        Route::post('/meetings', [MentorController::class, 'createMeeting']);
+        Route::put('/meetings/{meetingId}', [MentorController::class, 'updateMeeting']);
+        Route::post('/meetings/{meetingId}', [MentorController::class, 'updateMeeting']); // Catatan: Ada duplikasi PUT/POST di sini, mungkin salah satu bisa dihapus
+        Route::delete('/meetings/{meetingId}', [MentorController::class, 'deleteMeeting']);
+        Route::post('/meetings/{meetingId}/restore', [MentorController::class, 'restoreMeeting']);
+        Route::get('/dashboard/stats', [MentorController::class, 'getDashboardStats']);
+        Route::get('/announcements', [MentorController::class, 'getAnnouncements']);
+    });
+    
+    // ========================================================================
+    // AKHIR DARI BLOK KODE KEDUA
+    // ========================================================================
 
 });

@@ -22,35 +22,60 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      console.log('AuthContext: Checking auth', { hasToken: !!token, hasStoredUser: !!storedUser });
+      
       if (!token) {
+        // Development: Auto-login as mentor for testing
+        const mockUser = {
+          id: 1,
+          email: 'mentor@jejakliqo.com',
+          role: 'mentor',
+          profile: {
+            full_name: 'Test Mentor',
+            gender: 'Ikhwan',
+            nickname: 'Mentor',
+            phone_number: '081234567890'
+          }
+        };
+        
+        localStorage.setItem('token', 'mock-token-123');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        setUser(mockUser);
         setLoading(false);
         return;
       }
       
+      // Try to use stored user first (faster)
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          console.log('AuthContext: Using stored user', parsedUser);
+          setUser(parsedUser);
+          setLoading(false);
+          return;
+        } catch (parseError) {
+          console.error('Error parsing stored user data:', parseError);
+          localStorage.removeItem('user');
+        }
+      }
+      
+      // Fallback to API call
       const response = await getProfile();
       if (response.status === 'success') {
+        console.log('AuthContext: Got user from API', response.data);
         setUser(response.data);
-        // Update localStorage with fresh user data
         localStorage.setItem('user', JSON.stringify(response.data));
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       
       if (error.response?.status === 401) {
+        console.log('AuthContext: Token invalid, clearing auth');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
-      } else {
-        // Try to use stored user data as fallback
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          try {
-            setUser(JSON.parse(storedUser));
-          } catch (parseError) {
-            console.error('Error parsing stored user data:', parseError);
-            setUser(null);
-          }
-        }
       }
     } finally {
       setLoading(false);
@@ -62,8 +87,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log('AuthContext: Logging out');
     setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const value = {

@@ -59,4 +59,9 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['super_admin', 'admin']);
     }
+
+    public function mentorGroups()
+    {
+        return $this->hasMany(Group::class, 'mentor_id');
+    }
 }

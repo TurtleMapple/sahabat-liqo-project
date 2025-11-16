@@ -8,11 +8,42 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\AdminStoreRequest;
 use App\Http\Requests\AdminUpdateRequest;
 
 class AdminController extends Controller
 {
+    /**
+     * Validate that user is an admin
+     */
+    private function validateAdminRole(User $admin): bool
+    {
+        return $admin->role === 'admin';
+    }
+
+    /**
+     * Handle profile picture upload
+     */
+    private function handleProfilePictureUpload($request, $email, $oldPicturePath = null): ?string
+    {
+        if (!$request->hasFile('profile_picture')) {
+            return null;
+        }
+
+        // Delete old profile picture if exists
+        if ($oldPicturePath) {
+            Storage::disk('public')->delete($oldPicturePath);
+        }
+
+        $file = $request->file('profile_picture');
+        $extension = $file->getClientOriginalExtension();
+        $emailPrefix = str_replace(['@', '.'], '_', $email);
+        $fileName = 'admin_' . $emailPrefix . '_' . time() . '.' . $extension;
+        
+        return $file->storeAs('profile_pictures', $fileName, 'public');
+    }
+
     public function index(Request $request)
     {
         $query = User::with('profile')->where('role', 'admin')->whereNull('deleted_at');
@@ -72,10 +103,7 @@ class AdminController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            $profilePicturePath = null;
-            if ($request->hasFile('profile_picture')) {
-                $profilePicturePath = $request->file('profile_picture')->store('profile_pictures', 'public');
-            }
+            $profilePicturePath = $this->handleProfilePictureUpload($request, $request->email);
 
             Profile::create([
                 'user_id' => $user->id,
@@ -87,7 +115,7 @@ class AdminController extends Controller
                 'address' => $request->address,
                 'job' => $request->job,
                 'profile_picture' => $profilePicturePath,
-                'status' => $request->status,
+                'status' => $request->status ?? 'Aktif',
                 'status_note' => $request->status_note,
             ]);
 
@@ -100,17 +128,23 @@ class AdminController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Delete uploaded file if user creation failed
+            if (isset($profilePicturePath) && $profilePicturePath) {
+                Storage::disk('public')->delete($profilePicturePath);
+            }
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to create admin',
-                'errors' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while creating admin',
             ], 500);
         }
     }
 
     public function show(User $admin)
     {
-        if ($admin->role !== 'admin') {
+        if (!$this->validateAdminRole($admin)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User is not an admin',
@@ -129,7 +163,7 @@ class AdminController extends Controller
 
     public function update(AdminUpdateRequest $request, User $admin)
     {
-        if ($admin->role !== 'admin') {
+        if (!$this->validateAdminRole($admin)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User is not an admin',
@@ -138,11 +172,19 @@ class AdminController extends Controller
 
         DB::beginTransaction();
         try {
+            // Update user email
             $admin->update([
                 'email' => $request->email,
-                'password' => $request->password ? Hash::make($request->password) : $admin->password,
             ]);
 
+            // Update password if provided
+            if ($request->filled('password')) {
+                $admin->update([
+                    'password' => Hash::make($request->password),
+                ]);
+            }
+
+            // Prepare profile data
             $profileData = [
                 'full_name' => $request->full_name,
                 'nickname' => $request->nickname,
@@ -151,19 +193,26 @@ class AdminController extends Controller
                 'hobby' => $request->hobby,
                 'address' => $request->address,
                 'job' => $request->job,
-                'status' => $request->status,
+                'status' => $request->status ?? 'Aktif',
                 'status_note' => $request->status_note,
             ];
 
-            if ($request->hasFile('profile_picture')) {
-                // Delete old profile picture if exists
-                if ($admin->profile->profile_picture) {
-                    \Storage::disk('public')->delete($admin->profile->profile_picture);
-                }
-                $profileData['profile_picture'] = $request->file('profile_picture')->store('profile_pictures', 'public');
+            // Handle profile picture upload
+            $profilePicturePath = $this->handleProfilePictureUpload(
+                $request, 
+                $request->email, 
+                $admin->profile->profile_picture ?? null
+            );
+            if ($profilePicturePath) {
+                $profileData['profile_picture'] = $profilePicturePath;
             }
 
-            $admin->profile->update($profileData);
+            // Update or create profile
+            if ($admin->profile) {
+                $admin->profile->update($profileData);
+            } else {
+                Profile::create(array_merge($profileData, ['user_id' => $admin->id]));
+            }
 
             DB::commit();
 
@@ -174,17 +223,18 @@ class AdminController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update admin',
-                'errors' => $e->getMessage(),
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while updating admin',
             ], 500);
         }
     }
 
     public function destroy(User $admin)
     {
-        if ($admin->role !== 'admin') {
+        if (!$this->validateAdminRole($admin)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User is not an admin',
@@ -209,7 +259,7 @@ class AdminController extends Controller
 
     public function block(User $admin)
     {
-        if ($admin->role !== 'admin') {
+        if (!$this->validateAdminRole($admin)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User is not an admin',
@@ -234,7 +284,7 @@ class AdminController extends Controller
 
     public function unblock(User $admin)
     {
-        if ($admin->role !== 'admin') {
+        if (!$this->validateAdminRole($admin)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User is not an admin',
@@ -277,18 +327,40 @@ class AdminController extends Controller
 
     public function forceDelete($id)
     {
-        $admin = User::onlyTrashed()->where('role', 'admin')->findOrFail($id);
-        
-        // Delete related profile first
-        if ($admin->profile) {
-            $admin->profile->forceDelete();
-        }
-        
-        $admin->forceDelete();
+        DB::beginTransaction();
+        try {
+            $admin = User::onlyTrashed()->where('role', 'admin')->findOrFail($id);
+            
+            // Delete profile picture if exists
+            if ($admin->profile && $admin->profile->profile_picture) {
+                Storage::disk('public')->delete($admin->profile->profile_picture);
+            }
+            
+            // Delete related profile first
+            if ($admin->profile) {
+                $admin->profile->forceDelete();
+            }
+            
+            // Delete all tokens
+            $admin->tokens()->delete();
+            
+            // Finally delete the user
+            $admin->forceDelete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Admin permanently deleted',
-        ]);
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Admin permanently deleted',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to permanently delete admin',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while deleting admin',
+            ], 500);
+        }
     }
 }

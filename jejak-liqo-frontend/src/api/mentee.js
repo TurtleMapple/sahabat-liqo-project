@@ -17,3 +17,34 @@ export const menteeAPI = {
   getMenteeStats: (id) => api.get(`/reports/mentee-stats/${id}`),
   exportData: (params = {}) => api.get('/mentees/export', { params, responseType: 'blob' })
 };
+
+// Named exports for backward compatibility
+export const getAllMentees = async (params = {}) => {
+  const response = await api.get('/mentees', { params });
+  return response.data;
+};
+
+export const getMentees = async (params = {}) => {
+  const response = await api.get('/mentees', { params });
+  return response.data;
+};
+
+export const createMentee = async (data) => {
+  const response = await api.post('/mentees', data);
+  return response.data;
+};
+
+export const getMentee = async (id) => {
+  const response = await api.get(`/mentees/${id}`);
+  return response.data;
+};
+
+export const updateMentee = async (id, data) => {
+  const response = await api.put(`/mentees/${id}`, data);
+  return response.data;
+};
+
+export const deleteMentee = async (id) => {
+  const response = await api.delete(`/mentees/${id}`);
+  return response.data;
+};

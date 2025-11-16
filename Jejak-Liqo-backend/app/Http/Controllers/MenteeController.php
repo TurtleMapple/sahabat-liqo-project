@@ -7,6 +7,7 @@ use App\Http\Resources\MenteeResource;
 use App\Models\Mentee;
 use App\Models\MenteeGroupHistory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MenteeController extends Controller
 {
@@ -127,7 +128,7 @@ class MenteeController extends Controller
                 'from_group_id' => $oldGroupId,
                 'to_group_id' => $request->group_id,
                 'moved_at' => now(),
-                'moved_by' => auth()->id(),
+                'moved_by' => Auth::id(),
             ]);
         }
         
@@ -204,7 +205,7 @@ class MenteeController extends Controller
                 'mentee_id' => $mentee->id,
                 'from_group_id' => $mentee->group_id,
                 'to_group_id' => $targetGroupId,
-                'moved_by' => auth()->id(),
+                'moved_by' => Auth::id(),
             ]);
         }
 

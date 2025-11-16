@@ -8,7 +8,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import AdminDashboard from "./pages/admin/Dashboard";
 import KelolaMentee from "./pages/admin/KelolaMentee/KelolaMentee";
-import TambahMentee from "./pages/admin/KelolaMentee/TambahMentee";
+import AdminTambahMentee from "./pages/admin/KelolaMentee/TambahMentee";
 import EditMentee from "./pages/admin/KelolaMentee/EditMentee";
 import RecycleBinMentee from "./pages/admin/KelolaMentee/RecycleBinMentee";
 import KelolaMentor from "./pages/admin/KelolaMentor/KelolaMentor";
@@ -21,8 +21,8 @@ import CatatanPertemuan from "./pages/admin/CatatanPertemuan/CatatanPertemuan";
 import TambahPertemuan from "./pages/admin/CatatanPertemuan/TambahPertemuan";
 import EditPertemuan from "./pages/admin/CatatanPertemuan/EditPertemuan";
 import TrashedPertemuan from "./pages/admin/CatatanPertemuan/TrashedPertemuan";
-import KelolaKelompok from "./pages/admin/KelolaKelompok/KelolaKelompok";
-import TambahKelompok from "./pages/admin/KelolaKelompok/TambahKelompok";
+import AdminKelolaKelompok from "./pages/admin/KelolaKelompok/KelolaKelompok";
+import AdminTambahKelompok from "./pages/admin/KelolaKelompok/TambahKelompok";
 import EditKelompok from "./pages/admin/KelolaKelompok/EditKelompok";
 import TrashedKelompok from "./pages/admin/KelolaKelompok/TrashedKelompok";
 import KelolaPengumuman from "./pages/admin/KelolaPengumuman/KelolaPengumuman";
@@ -39,6 +39,18 @@ import AddAdmin from "./pages/superadmin/KelolaAdmin/AddAdmin";
 import RecycleBin from "./pages/superadmin/KelolaAdmin/RecycleBin";
 import Pengumuman from "./pages/superadmin/Pengumuman";
 import MentorDashboard from "./pages/mentor/Dashboard";
+
+import MentorLayout from "./components/mentor/Layout";
+import MentorKelolaKelompok from "./pages/mentor/KelolaKelompok/KelolaKelompok";
+import MentorTambahMentee from "./pages/mentor/KelolaMentee/TambahMentee";
+import MentorEditMentee from "./pages/mentor/KelolaMentee/EditMentee";
+import MentorMenteeNonAktif from "./pages/mentor/KelolaMentee/MenteeNonAktif";
+import MentorCatatanPertemuan from "./pages/mentor/KelolaPertemuan/CatatanPertemuan";
+import MentorTambahPertemuan from "./pages/mentor/KelolaPertemuan/TambahPertemuan";
+import MentorEditPertemuan from "./pages/mentor/KelolaPertemuan/EditPertemuan";
+import MentorPengumuman from "./pages/mentor/Pengumuman/Pengumuman";
+import Settings from "./pages/mentor/ProfileMentor/Settings";
+
 import ProtectedRoute from "./routes/ProtectedRoute";
 import TokenExpirationProvider from "./components/TokenExpirationProvider";
 
@@ -117,7 +129,7 @@ function App() {
           path="/admin/kelola-mentee/tambah"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <TambahMentee />
+              <AdminTambahMentee />
             </ProtectedRoute>
           }
         />
@@ -234,7 +246,7 @@ function App() {
           path="/admin/kelola-kelompok"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <KelolaKelompok />
+              <AdminKelolaKelompok />
             </ProtectedRoute>
           }
         />
@@ -243,7 +255,7 @@ function App() {
           path="/admin/kelola-kelompok/tambah"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <TambahKelompok />
+              <AdminTambahKelompok />
             </ProtectedRoute>
           }
         />
@@ -385,14 +397,26 @@ function App() {
           }
         />
 
+        {/* Mentor Routes */}
         <Route
-          path="/mentor/dashboard"
+          path="/mentor"
           element={
             <ProtectedRoute allowedRoles={["mentor"]}>
-              <MentorDashboard />
+              <MentorLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="dashboard" element={<MentorDashboard />} />
+          <Route path="kelompok/:id" element={<MentorKelolaKelompok />} />
+          <Route path="kelompok/:id/kelola-mentee" element={<MentorTambahMentee />} />
+          <Route path="kelompok/:id/edit-mentee/:menteeId" element={<MentorEditMentee />} />
+          <Route path="kelompok/:id/mentee-nonaktif" element={<MentorMenteeNonAktif />} />
+          <Route path="catatan-pertemuan" element={<MentorCatatanPertemuan />} />
+          <Route path="tambah-pertemuan/:groupId" element={<MentorTambahPertemuan />} />
+          <Route path="edit-pertemuan/:meetingId" element={<MentorEditPertemuan />} />
+          <Route path="pengumuman" element={<MentorPengumuman />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />

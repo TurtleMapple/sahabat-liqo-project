@@ -128,4 +128,14 @@ class AuthController extends Controller
             'message' => 'All sessions have been logged out.',
         ]);
     }
+
+    public function me(Request $request){
+        $user = $request->user()->load('profile');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User data retrieved successfully',
+            'data' => new UserResource($user),
+        ]);
+    }
 }
