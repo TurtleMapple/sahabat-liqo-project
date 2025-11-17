@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Users, Clock, FileText, Camera, Search, UserCheck, UserX, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-
 import { createMeeting, getMentorGroups, getMentorGroupDetail } from '../../../api/mentor';
+import Layout from '../../../components/mentor/Layout';
 
 const TambahPertemuan = () => {
   const navigate = useNavigate();
@@ -170,7 +170,8 @@ const TambahPertemuan = () => {
   }, [toast]);
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+    <Layout activeMenu="Pertemuan">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto">
         <div className="flex items-center space-x-4 mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -504,11 +505,11 @@ const TambahPertemuan = () => {
 
         {/* Confirmation Modal */}
         {showConfirmModal && (
-          <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
               <div className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                  <FileText size={32} className="text-blue-600 dark:text-blue-400" />
+                <div className="w-12 h-12 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                  <FileText size={24} className="text-blue-600 dark:text-blue-400" />
                 </div>
                 
                 <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
@@ -555,7 +556,8 @@ const TambahPertemuan = () => {
             </div>
           </div>
         )}
-    </div>
+      </div>
+    </Layout>
   );
 };
 

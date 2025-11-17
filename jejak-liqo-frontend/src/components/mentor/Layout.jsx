@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { createMentorGroup } from '../../api/mentor';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
-const Layout = () => {
+const Layout = ({ children, activeMenu, onCreateGroup }) => {
   const { isDark } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const Layout = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState({ group_name: '', description: '' });
   const [creating, setCreating] = useState(false);
-  const [showSuccessLoading, setShowSuccessLoading] = useState(false);
+
 
   // Check if user is mentor
   useEffect(() => {
@@ -39,15 +39,9 @@ const Layout = () => {
       toast.success('Kelompok berhasil dibuat');
       setShowCreateModal(false);
       setFormData({ group_name: '', description: '' });
-      setShowSuccessLoading(true);
       
       // Navigate with refresh state
       navigate('/mentor/dashboard', { replace: true, state: { refresh: true } });
-      
-      // Hide loading after navigation
-      setTimeout(() => {
-        setShowSuccessLoading(false);
-      }, 1000);
     } catch (error) {
       console.error('Error creating group:', error);
       toast.error('Gagal membuat kelompok');
@@ -61,24 +55,28 @@ const Layout = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-50 dark:bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${isDark ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       <Header 
         toggleSidebar={() => setIsSidebarOpen(true)}
         toggleCollapse={() => setIsCollapsed(!isCollapsed)}
         isCollapsed={isCollapsed}
-        onCreateGroup={() => setShowCreateModal(true)}
+        onCreateGroup={onCreateGroup || (() => setShowCreateModal(true))}
+        activeMenu={activeMenu}
       />
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         isCollapsed={isCollapsed}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        activeMenu={activeMenu}
       />
       
       {/* Main Content */}
-      <div className={`${isCollapsed ? 'lg:pl-20' : 'lg:pl-72'} pt-16 transition-all duration-200`}>
-        <main className="p-6 pb-20 lg:pb-6 min-h-screen">
-          <Outlet />
+      <div className={`transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'lg:ml-20' : 'lg:ml-72'
+      } pt-16`}>
+        <main className={`min-h-[calc(100vh-4rem)] p-4 sm:p-6 ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+          {children}
         </main>
       </div>
 
@@ -155,15 +153,7 @@ const Layout = () => {
         </div>
       )}
 
-      {/* Success Loading Overlay */}
-      {showSuccessLoading && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            <p className="text-gray-900 dark:text-white font-medium">Memuat kelompok baru...</p>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

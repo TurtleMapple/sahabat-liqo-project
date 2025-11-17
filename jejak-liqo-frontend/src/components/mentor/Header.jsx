@@ -9,7 +9,7 @@ import LogoutConfirmModal from '../ui/LogoutConfirmModal';
 import logoLight from '../../assets/images/logo/LogoShaf_Terang.png';
 import logoDark from '../../assets/images/logo/LogoShaf_Gelap.png';
 
-const Header = ({ toggleSidebar, toggleCollapse, isCollapsed, onCreateGroup }) => {
+const Header = ({ toggleSidebar, toggleCollapse, isCollapsed, onCreateGroup, activeMenu }) => {
   const { isDark, toggleTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -30,17 +30,17 @@ const Header = ({ toggleSidebar, toggleCollapse, isCollapsed, onCreateGroup }) =
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-40 h-16 ${
-        isDark ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-white border-gray-200'
+      <header className={`fixed top-0 left-0 right-0 z-40 h-16 backdrop-blur-sm ${
+        isDark ? 'bg-white/95 dark:bg-gray-800/95 border-gray-200 dark:border-gray-700' : 'bg-white/95 border-gray-200'
       } border-b shadow-sm`}>
-        <div className="flex items-center justify-between h-full px-4 lg:px-6">
+        <div className="flex items-center justify-between h-full px-4 sm:px-6">
           {/* Left: Logo & Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               onClick={toggleSidebar}
               className={`lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
             >
-              <Menu size={20} className={isDark ? 'text-gray-300' : 'text-gray-600'} />
+              <Menu size={18} className={isDark ? 'text-gray-300' : 'text-gray-600'} />
             </button>
             <button
               onClick={toggleCollapse}
@@ -48,24 +48,34 @@ const Header = ({ toggleSidebar, toggleCollapse, isCollapsed, onCreateGroup }) =
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
               {isCollapsed ? 
-                <PanelLeft size={20} className={isDark ? 'text-gray-300' : 'text-gray-600'} /> :
-                <PanelLeftClose size={20} className={isDark ? 'text-gray-300' : 'text-gray-600'} />
+                <PanelLeft size={18} className={isDark ? 'text-gray-300' : 'text-gray-600'} /> :
+                <PanelLeftClose size={18} className={isDark ? 'text-gray-300' : 'text-gray-600'} />
               }
             </button>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <img 
                 src={isDark ? logoLight : logoDark} 
                 alt="Sahabat Liqo" 
-                className="w-8 h-8 object-contain"
+                className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
               />
-              <h1 className={`text-xl font-medium ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
-                Sahabat Liqo
-              </h1>
+              <div className="hidden sm:block">
+                <h1 className={`text-base sm:text-lg font-medium ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
+                  {activeMenu || 'Dashboard'}
+                </h1>
+                <p className={`text-xs ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>
+                  Sahabat Liqo
+                </p>
+              </div>
+              <div className="sm:hidden">
+                <h1 className={`text-sm font-medium ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
+                  {activeMenu || 'Dashboard'}
+                </h1>
+              </div>
             </div>
           </div>
 
-          {/* Right: Add Group, Theme & Profile */}
-          <div className="flex items-center space-x-3">
+          {/* Right: Add Group & Profile */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <div className="relative">
               <button
                 onClick={() => setShowAddMenu(!showAddMenu)}
@@ -100,20 +110,20 @@ const Header = ({ toggleSidebar, toggleCollapse, isCollapsed, onCreateGroup }) =
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 className={`flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
-                  <User size={16} className="text-white" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
+                  <User size={14} className="text-white sm:w-4 sm:h-4" />
                 </div>
-                <div className="hidden md:block text-left">
-                  <p className={`text-sm font-medium ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
+                <div className="hidden sm:block text-left">
+                  <p className={`text-sm font-medium ${isDark ? 'text-gray-900 dark:text-white' : 'text-gray-900'} truncate max-w-32`}>
                     {user?.profile?.full_name || user?.name || 'Mentor'}
                   </p>
-                  <p className={`text-xs ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`text-xs ${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'} truncate max-w-32`}>
                     {user?.email}
                   </p>
                 </div>
-                <ChevronDown size={16} className={`${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'} transition-transform ${
+                <ChevronDown size={14} className={`${isDark ? 'text-gray-500 dark:text-gray-400' : 'text-gray-500'} transition-transform ${
                   showProfileMenu ? 'rotate-180' : ''
-                }`} />
+                } hidden sm:block`} />
               </button>
               
               {/* Profile Menu */}

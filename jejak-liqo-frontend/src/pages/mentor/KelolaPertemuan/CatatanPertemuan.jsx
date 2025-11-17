@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
 import { FileText, Download, Calendar, Users, Eye, Plus, Trash2, Search, Filter, MapPin, Edit, CheckCircle, XCircle, AlertTriangle, AlertCircle, X, RotateCcw } from 'lucide-react';
 import { getMentorMeetings, getMeetingDetail, deleteMeeting, getTrashedMeetings, restoreMeeting } from '../../../api/mentor';
+import Layout from '../../../components/mentor/Layout';
 
 const CatatanPertemuan = () => {
   const navigate = useNavigate();
@@ -105,26 +105,11 @@ const CatatanPertemuan = () => {
     setCurrentPage(1);
   }, [currentView, searchQuery, filterType]);
 
-  if (loading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <Layout activeMenu="Pertemuan">
+      <div className="p-6 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -137,14 +122,14 @@ const CatatanPertemuan = () => {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
             <button 
               onClick={() => navigate(`/mentor/tambah-pertemuan/${groupId}`)}
-              className="flex items-center justify-center px-4 py-2 bg-white/80 dark:bg-gray-800/80 hover:bg-white/90 dark:hover:bg-gray-800/90 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors"
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <Plus size={16} className="mr-2" />
               Tambah Pertemuan
             </button>
             <button 
               onClick={() => setCurrentView(currentView === 'active' ? 'trashed' : 'active')}
-              className="flex items-center justify-center px-4 py-2 bg-white/80 dark:bg-gray-800/80 hover:bg-white/90 dark:hover:bg-gray-800/90 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 rounded-lg transition-colors"
+              className="flex items-center justify-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
             >
               <Trash2 size={16} className="mr-2" />
               {currentView === 'active' ? 'Terhapus' : 'Kembali'}
@@ -155,17 +140,29 @@ const CatatanPertemuan = () => {
         {/* Statistics Cards - Only show for active view */}
         {currentView === 'active' && (
           <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Total Pertemuan Minggu Ini</p>
-                  <p className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white">{stats.weeklyTotal}</p>
-                </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <FileText size={20} className="sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+            {loading ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-2"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                  </div>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Total Pertemuan Minggu Ini</p>
+                    <p className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white">{stats.weeklyTotal}</p>
+                  </div>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <FileText size={20} className="sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -202,7 +199,19 @@ const CatatanPertemuan = () => {
             </h2>
           </div>
 
-          {filteredReports.length > 0 ? (
+          {loading ? (
+            <div className="animate-pulse">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                    <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : filteredReports.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {paginatedReports.map((report) => (
@@ -425,8 +434,8 @@ const CatatanPertemuan = () => {
 
         {/* Detail Modal */}
         {showDetailModal && selectedReport && (
-          <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-lg border border-gray-200 dark:border-gray-700">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex-1">
@@ -629,8 +638,8 @@ const CatatanPertemuan = () => {
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && reportToDelete && (
-          <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Konfirmasi Hapus
               </h3>
@@ -682,8 +691,8 @@ const CatatanPertemuan = () => {
 
         {/* Restore Confirmation Modal */}
         {showRestoreModal && reportToDelete && (
-          <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Konfirmasi Pulihkan
               </h3>
@@ -729,7 +738,8 @@ const CatatanPertemuan = () => {
             </div>
           </div>
         )}
-    </div>
+      </div>
+    </Layout>
   );
 };
 

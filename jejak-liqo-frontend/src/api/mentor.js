@@ -173,13 +173,48 @@ export const getMentorMeetingDetail = async (meetingId) => {
 };
 
 export const createMentorMeeting = async (meetingData) => {
-  const response = await api.post('/mentor/meetings', meetingData);
+  const formData = new FormData();
+  
+  // Add regular fields
+  Object.keys(meetingData).forEach(key => {
+    if (key === 'photos') {
+      // Handle photos separately
+      if (meetingData.photos && meetingData.photos.length > 0) {
+        meetingData.photos.forEach((photo, index) => {
+          formData.append(`photos[${index}]`, photo);
+        });
+      }
+    } else if (key === 'attendances') {
+      // Handle attendances as JSON
+      formData.append('attendances', JSON.stringify(meetingData.attendances));
+    } else {
+      formData.append(key, meetingData[key]);
+    }
+  });
+  
+  const response = await api.post('/mentor/meetings', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
   return response.data;
 };
 
 export const updateMentorMeeting = async (meetingId, meetingData) => {
-  const response = await api.put(`/mentor/meetings/${meetingId}`, meetingData);
-  return response.data;
+  // Jika FormData, gunakan POST dengan _method override
+  if (meetingData instanceof FormData) {
+    meetingData.append('_method', 'PUT');
+    const response = await api.post(`/mentor/meetings/${meetingId}`, meetingData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  } else {
+    // Jika JSON biasa, gunakan PUT normal
+    const response = await api.put(`/mentor/meetings/${meetingId}`, meetingData);
+    return response.data;
+  }
 };
 
 export const deleteMentorMeeting = async (meetingId) => {

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import EditGroupModal from "../../../components/mentor/EditGroupModal";
 import CreateGroupModal from "../../../components/mentor/CreateGroupModal";
 import MenteeDetailModal from "../../../components/mentor/MenteeDetailModal";
+import Layout from "../../../components/mentor/Layout";
 import { getMentorGroupDetail, deleteMentorGroup, createMentorGroup } from "../../../api/mentor";
 import { User, Calendar, Users, ArrowLeft, MapPin, Phone, Search, Settings, Edit, Trash2, Plus, BookOpen, Eye, X } from "lucide-react";
 
@@ -97,42 +98,9 @@ const KelolaKelompok = () => {
   };
 
   const handleEditGroup = (field = null) => {
-    const fieldName = field === 'name' ? 'nama kelompok' : field === 'description' ? 'deskripsi' : 'kelompok';
-    
-    toast((t) => (
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col space-y-3">
-          <span className="font-medium text-gray-900 dark:text-white">
-            Apakah Anda yakin ingin mengedit {fieldName}?
-          </span>
-          <div className="flex space-x-2 justify-center">
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                setEditField(field);
-                setShowEditModal(true);
-              }}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition-colors"
-            >
-              Ya, Edit
-            </button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-            >
-              Batal
-            </button>
-          </div>
-        </div>
-      </div>
-    ), {
-      duration: Infinity,
-      position: 'top-center',
-      style: {
-        background: 'transparent',
-        boxShadow: 'none'
-      }
-    });
+    if (showEditModal) return; // Prevent spam
+    setEditField(field);
+    setShowEditModal(true);
   };
 
   const handleGroupUpdate = (updatedGroup) => {
@@ -215,37 +183,32 @@ const KelolaKelompok = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-6"></div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  if (!group) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto text-center">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-          Kelompok Tidak Ditemukan
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Silakan gunakan navigasi untuk kembali ke dashboard.
-        </p>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
+    <Layout activeMenu="Kelompok">
+      <div className="p-6 max-w-7xl mx-auto">
+        {loading ? (
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-6"></div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            </div>
+          </div>
+        ) : !group ? (
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+              Kelompok Tidak Ditemukan
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              Silakan gunakan navigasi untuk kembali ke dashboard.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
             <button
@@ -388,9 +351,9 @@ const KelolaKelompok = () => {
         )}
         
         <hr className="border-gray-200 dark:border-gray-700" />
-      </div>
+            </div>
 
-      {activeTab === 'detail' ? (
+            {activeTab === 'detail' ? (
         <>
           <div className="relative mb-6 rounded-lg overflow-hidden">
             <img
@@ -672,9 +635,9 @@ const KelolaKelompok = () => {
             </div>
           </div>
         </div>
-      ) : null}
+            ) : null}
 
-      <MenteeDetailModal
+            <MenteeDetailModal
         isOpen={showMenteeModal}
         mentee={selectedMentee}
         onClose={() => setShowMenteeModal(false)}
@@ -700,8 +663,11 @@ const KelolaKelompok = () => {
         setFormData={setFormData}
         onSubmit={handleCreateGroup}
         creating={creating}
-      />
-    </div>
+            />
+          </>
+        )}
+      </div>
+    </Layout>
   );
 };
 

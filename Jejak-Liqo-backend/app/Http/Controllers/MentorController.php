@@ -966,7 +966,7 @@ class MentorController extends Controller
                     'email' => $user->email,
                     'role' => $user->role,
                     'profile' => $user->profile ? [
-                        'name' => $user->profile->full_name,
+                        'full_name' => $user->profile->full_name,
                         'nickname' => $user->profile->nickname,
                         'phone_number' => $user->profile->phone_number,
                         'gender' => $user->profile->gender,
@@ -983,6 +983,61 @@ class MentorController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal mengambil data profile'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update profile mentor - Digunakan oleh role: mentor
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $request->validate([
+                'full_name' => 'nullable|string|max:255',
+                'nickname' => 'nullable|string|max:255',
+                'phone_number' => 'nullable|string|max:255',
+                'job' => 'nullable|string|max:255',
+                'address' => 'nullable|string'
+            ]);
+
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User tidak ditemukan'
+                ], 404);
+            }
+
+            // Update or create profile
+            $user->profile()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'full_name' => $request->full_name,
+                    'nickname' => $request->nickname,
+                    'phone_number' => $request->phone_number,
+                    'job' => $request->job,
+                    'address' => $request->address
+                ]
+            );
+
+            $user->load('profile');
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Profile berhasil diperbarui',
+                'data' => [
+                    'id' => $user->id,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'profile' => $user->profile
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memperbarui profile'
             ], 500);
         }
     }
@@ -1425,10 +1480,7 @@ class MentorController extends Controller
                 'place' => 'required|string|max:255',
                 'notes' => 'nullable|string',
                 'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
-                'attendances' => 'nullable|array',
-                'attendances.*.mentee_id' => 'required_with:attendances|integer',
-                'attendances.*.status' => 'required_with:attendances|in:hadir,sakit,izin,alpha',
-                'attendances.*.note' => 'nullable|string'
+                'attendances' => 'nullable|string'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -1477,20 +1529,24 @@ class MentorController extends Controller
             ]);
 
             // Create attendance records if provided
-            if ($request->attendances && is_array($request->attendances)) {
-                foreach ($request->attendances as $attendance) {
-                    // Verify mentee exists and belongs to the group
-                    $mentee = \App\Models\Mentee::where('id', $attendance['mentee_id'])
-                        ->where('group_id', $request->group_id)
-                        ->first();
-                    
-                    if ($mentee) {
-                        \App\Models\Attendance::create([
-                            'meeting_id' => $meeting->id,
-                            'mentee_id' => $attendance['mentee_id'],
-                            'status' => $attendance['status'],
-                            'notes' => $attendance['note'] ?? null
-                        ]);
+            if ($request->attendances) {
+                $attendances = is_string($request->attendances) ? json_decode($request->attendances, true) : $request->attendances;
+                
+                if (is_array($attendances)) {
+                    foreach ($attendances as $attendance) {
+                        // Verify mentee exists and belongs to the group
+                        $mentee = \App\Models\Mentee::where('id', $attendance['mentee_id'])
+                            ->where('group_id', $request->group_id)
+                            ->first();
+                        
+                        if ($mentee) {
+                            \App\Models\Attendance::create([
+                                'meeting_id' => $meeting->id,
+                                'mentee_id' => $attendance['mentee_id'],
+                                'status' => $attendance['status'],
+                                'notes' => $attendance['note'] ?? null
+                            ]);
+                        }
                     }
                 }
             }
@@ -1584,6 +1640,8 @@ class MentorController extends Controller
                 }
             }
 
+            DB::beginTransaction();
+            
             $meeting->update([
                 'topic' => $request->topic,
                 'meeting_date' => $request->meeting_date,
@@ -1592,6 +1650,35 @@ class MentorController extends Controller
                 'notes' => $request->notes,
                 'photos' => !empty($photoUrls) ? json_encode($photoUrls) : null
             ]);
+
+            // Update attendance records if provided
+            if ($request->attendances) {
+                $attendances = is_string($request->attendances) ? json_decode($request->attendances, true) : $request->attendances;
+                
+                if (is_array($attendances)) {
+                    // Delete existing attendance records
+                    \App\Models\Attendance::where('meeting_id', $meetingId)->delete();
+                    
+                    // Create new attendance records
+                    foreach ($attendances as $attendance) {
+                        // Verify mentee exists and belongs to the group
+                        $mentee = \App\Models\Mentee::where('id', $attendance['mentee_id'])
+                            ->where('group_id', $meeting->group_id)
+                            ->first();
+                        
+                        if ($mentee) {
+                            \App\Models\Attendance::create([
+                                'meeting_id' => $meeting->id,
+                                'mentee_id' => $attendance['mentee_id'],
+                                'status' => $attendance['status'],
+                                'notes' => $attendance['note'] ?? null
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            DB::commit();
 
             return response()->json([
                 'status' => 'success',
@@ -1606,6 +1693,7 @@ class MentorController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Update meeting error:', ['message' => $e->getMessage()]);
             return response()->json([
                 'status' => 'error',

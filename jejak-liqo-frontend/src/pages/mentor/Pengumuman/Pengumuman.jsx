@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useTheme } from '../../../contexts/ThemeContext';
+import Layout from '../../../components/mentor/Layout';
 import { 
   Search,
   Eye,
@@ -223,7 +224,7 @@ const Pengumuman = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   return (
-    <div className={`min-h-screen p-6 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <Layout activeMenu="Pengumuman">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className={`text-3xl font-bold mb-2 flex items-center ${
@@ -472,7 +473,7 @@ const Pengumuman = () => {
           announcement={selectedAnnouncement}
         />
       </div>
-    </div>
+    </Layout>
   );
 };
 

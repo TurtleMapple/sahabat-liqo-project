@@ -9,6 +9,7 @@ const EditGroupModal = ({ isOpen, onClose, group, onUpdate, field }) => {
     description: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showingConfirmation, setShowingConfirmation] = useState(false);
 
   useEffect(() => {
     if (group && isOpen) {
@@ -16,12 +17,15 @@ const EditGroupModal = ({ isOpen, onClose, group, onUpdate, field }) => {
         group_name: group.group_name || '',
         description: group.description || ''
       });
+      setShowingConfirmation(false);
     }
   }, [group, isOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (showingConfirmation || isLoading) return;
     
+    setShowingConfirmation(true);
     toast((t) => (
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col space-y-3">
@@ -39,7 +43,10 @@ const EditGroupModal = ({ isOpen, onClose, group, onUpdate, field }) => {
               Ya, Simpan
             </button>
             <button
-              onClick={() => toast.dismiss(t.id)}
+              onClick={() => {
+                toast.dismiss(t.id);
+                setShowingConfirmation(false);
+              }}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
             >
               Batal
@@ -76,6 +83,7 @@ const EditGroupModal = ({ isOpen, onClose, group, onUpdate, field }) => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      setShowingConfirmation(false);
     }
   };
 
@@ -97,7 +105,10 @@ const EditGroupModal = ({ isOpen, onClose, group, onUpdate, field }) => {
             {getModalTitle()}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setShowingConfirmation(false);
+              onClose();
+            }}
             className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors"
           >
             <X size={20} />
@@ -139,7 +150,10 @@ const EditGroupModal = ({ isOpen, onClose, group, onUpdate, field }) => {
           <div className="flex justify-end space-x-3 mt-6">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                setShowingConfirmation(false);
+                onClose();
+              }}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg transition-colors"
             >
               Batal

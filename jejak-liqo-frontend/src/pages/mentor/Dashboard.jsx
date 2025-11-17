@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getMentorGroups, getTrashedGroups, restoreGroup, createMentorGroup } from "../../api/mentor";
 import { User, Calendar, RotateCcw, Trash2, Plus, X } from "lucide-react";
+import Layout from "../../components/mentor/Layout";
 
 const MentorDashboard = () => {
   const navigate = useNavigate();
@@ -145,37 +146,43 @@ const MentorDashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-start justify-between mb-4">
+    <Layout activeMenu="Beranda" onCreateGroup={() => setShowCreateModal(true)}>
+      <div className="max-w-7xl mx-auto px-2 sm:px-0">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
             <div className="flex-1">
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-2">
                 {showTrashed ? 'Kelompok Terhapus' : 'Daftar Kelompok'}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                 {showTrashed 
                   ? 'Kelompok yang telah dihapus dan dapat dipulihkan.' 
                   : 'Kelola dan pantau aktivitas kelompok mentoring Anda.'
                 }
               </p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center">
               <button
                 onClick={() => setShowTrashed(!showTrashed)}
-                className={`px-4 py-2 text-sm rounded-lg transition-colors flex-shrink-0 ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg transition-colors flex-shrink-0 ${
                   showTrashed 
                     ? 'bg-green-500 hover:bg-green-600 text-white border border-green-500'
                     : 'bg-red-500 hover:bg-red-600 text-white border border-red-500'
                 }`}
               >
-                {showTrashed ? 'Lihat Kelompok Aktif' : `Kelompok Terhapus (${trashedGroups.length})`}
+                <span className="hidden sm:inline">
+                  {showTrashed ? 'Lihat Kelompok Aktif' : `Kelompok Terhapus (${trashedGroups.length})`}
+                </span>
+                <span className="sm:hidden">
+                  {showTrashed ? 'Aktif' : `Terhapus (${trashedGroups.length})`}
+                </span>
               </button>
             </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div className="animate-pulse">
@@ -191,7 +198,7 @@ const MentorDashboard = () => {
           </div>
         ) : showTrashed ? (
           trashedGroups.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {trashedGroups.map((group) => (
                 <div
                   key={group.id}
@@ -252,7 +259,7 @@ const MentorDashboard = () => {
             </div>
           )
         ) : groups.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {groups.map((group) => (
               <div
                 key={group.id}
@@ -374,7 +381,8 @@ const MentorDashboard = () => {
             </div>
           </div>
         )}
-    </div>
+      </div>
+    </Layout>
   );
 };
 

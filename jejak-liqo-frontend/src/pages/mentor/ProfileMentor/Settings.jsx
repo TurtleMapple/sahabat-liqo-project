@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut, User, Bell, Moon, Sun, Edit, Save, X } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { logout } from '../../../api/auth';
-
+import Layout from '../../../components/mentor/Layout';
 import LogoutConfirmModal from '../../../components/ui/LogoutConfirmModal';
 import toast from 'react-hot-toast';
 
@@ -31,6 +31,7 @@ const Settings = () => {
         }
       });
       const data = await response.json();
+      console.log('Profile API Response:', data); // Debug log
       if (data.status === 'success') {
         setProfile(data.data);
         setEditData({
@@ -77,6 +78,7 @@ const Settings = () => {
       });
       
       const data = await response.json();
+      console.log('Update Profile API Response:', data); // Debug log
       if (data.status === 'success') {
         setProfile(data.data);
         setIsEditing(false);
@@ -106,7 +108,7 @@ const Settings = () => {
   };
 
   return (
-    <>
+    <Layout activeMenu="Profil">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -292,7 +294,7 @@ const Settings = () => {
         onClose={() => setShowLogoutModal(false)}
         onConfirm={handleLogout}
       />
-    </>
+    </Layout>
   );
 };
 

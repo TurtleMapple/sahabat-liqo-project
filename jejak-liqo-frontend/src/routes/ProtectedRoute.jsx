@@ -26,19 +26,7 @@ const ProtectedRoute = ({ allowedRoles = [], children }) => {
     }
   }, [loading, isAuthenticated, role, allowedRoles, hasShownUnauthorizedToast]);
 
-  // Loading state with smooth transition
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#4DABFF]/10 via-white to-[#4DABFF]/5 dark:from-[#1a2332] dark:via-[#0d1117] dark:to-[#1a2332] transition-all duration-300">
-        <div className="text-center animate-fade-in">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4DABFF] mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Memvalidasi autentikasi...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Skip loading state - let components handle their own loading
 
   // Not authenticated - redirect to login with return URL
   if (!isAuthenticated) {

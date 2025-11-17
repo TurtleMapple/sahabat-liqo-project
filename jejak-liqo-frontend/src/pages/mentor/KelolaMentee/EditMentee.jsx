@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
 import { ArrowLeft, User, Save } from "lucide-react";
+import Layout from "../../../components/mentor/Layout";
 
 const EditMentee = () => {
   const { id, menteeId } = useParams();
@@ -113,7 +113,8 @@ const EditMentee = () => {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <Layout activeMenu="Kelompok Saya">
+      <div className="p-6 max-w-4xl mx-auto">
         <div className="mb-6">
           <button
             onClick={() => navigate(`/mentor/kelompok/${id}`)}
@@ -287,7 +288,8 @@ const EditMentee = () => {
             </button>
           </div>
         </form>
-    </div>
+      </div>
+    </Layout>
   );
 };
 

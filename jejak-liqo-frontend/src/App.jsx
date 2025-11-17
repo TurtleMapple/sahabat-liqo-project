@@ -40,8 +40,6 @@ import EditAdmin from "./pages/superadmin/KelolaAdmin/EditAdmin";
 import RecycleBin from "./pages/superadmin/KelolaAdmin/RecycleBin";
 import Pengumuman from "./pages/superadmin/Pengumuman";
 import MentorDashboard from "./pages/mentor/Dashboard";
-
-import MentorLayout from "./components/mentor/Layout";
 import MentorKelolaKelompok from "./pages/mentor/KelolaKelompok/KelolaKelompok";
 import MentorTambahMentee from "./pages/mentor/KelolaMentee/TambahMentee";
 import MentorEditMentee from "./pages/mentor/KelolaMentee/EditMentee";
@@ -59,18 +57,6 @@ import TokenExpirationProvider from "./components/TokenExpirationProvider";
 import RoleGuard from "./components/RoleGuard";
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-white"></div>;
-  }
 
   return (
     <ThemeProvider>
@@ -431,25 +417,93 @@ function App() {
 
         {/* Mentor Routes */}
         <Route
-          path="/mentor/*"
+          path="/mentor/dashboard"
           element={
             <ProtectedRoute allowedRoles={["mentor"]}>
-              <MentorLayout />
+              <MentorDashboard />
             </ProtectedRoute>
           }
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<MentorDashboard />} />
-          <Route path="kelompok/:id" element={<MentorKelolaKelompok />} />
-          <Route path="kelompok/:id/kelola-mentee" element={<MentorTambahMentee />} />
-          <Route path="kelompok/:id/edit-mentee/:menteeId" element={<MentorEditMentee />} />
-          <Route path="kelompok/:id/mentee-nonaktif" element={<MentorMenteeNonAktif />} />
-          <Route path="catatan-pertemuan" element={<MentorCatatanPertemuan />} />
-          <Route path="tambah-pertemuan/:groupId" element={<MentorTambahPertemuan />} />
-          <Route path="edit-pertemuan/:meetingId" element={<MentorEditPertemuan />} />
-          <Route path="pengumuman" element={<MentorPengumuman />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
+        />
+        <Route
+          path="/mentor/kelompok"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <Navigate to="/mentor/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/kelompok/:id"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorKelolaKelompok />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/kelompok/:id/kelola-mentee"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorTambahMentee />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/kelompok/:id/edit-mentee/:menteeId"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorEditMentee />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/kelompok/:id/mentee-nonaktif"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorMenteeNonAktif />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/catatan-pertemuan"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorCatatanPertemuan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/tambah-pertemuan/:groupId"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorTambahPertemuan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/edit-pertemuan/:meetingId"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorEditPertemuan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/pengumuman"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <MentorPengumuman />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/settings"
+          element={
+            <ProtectedRoute allowedRoles={["mentor"]}>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Role-based redirects */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
