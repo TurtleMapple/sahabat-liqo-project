@@ -9,14 +9,19 @@ import LogoutConfirmModal from '../ui/LogoutConfirmModal';
 
 const Layout = ({ children, activeMenu = 'Dashboard' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
   const toggleSidebar = () => {
     if (window.innerWidth >= 1024) {
-      setSidebarCollapsed(!sidebarCollapsed);
+      const newCollapsed = !sidebarCollapsed;
+      setSidebarCollapsed(newCollapsed);
+      localStorage.setItem('sidebarCollapsed', JSON.stringify(newCollapsed));
     } else {
       setSidebarOpen(!sidebarOpen);
     }
@@ -26,12 +31,8 @@ const Layout = ({ children, activeMenu = 'Dashboard' }) => {
   useEffect(() => {
     const handleResize = () => {
       const isDesktop = window.innerWidth >= 1024;
-      if (isDesktop) {
+      if (!isDesktop) {
         setSidebarOpen(false);
-        setSidebarCollapsed(false);
-      } else {
-        setSidebarOpen(false);
-        setSidebarCollapsed(true);
       }
     };
 

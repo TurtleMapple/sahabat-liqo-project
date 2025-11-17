@@ -11,13 +11,16 @@ import {
   Trash2, 
   Eye, 
   Users,
-  Filter
+  Filter,
+  Upload
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { importMentees } from '../../../api/import';
 import MenteeStats from '../../../components/admin/KelolaMentee/MenteeStats';
 import MenteeDetailModal from '../../../components/admin/KelolaMentee/MenteeDetailModal';
 import MenteeDeleteModal from '../../../components/admin/KelolaMentee/MenteeDeleteModal';
 import MenteeBulkDeleteModal from '../../../components/admin/KelolaMentee/MenteeBulkDeleteModal';
+import ImportExcelModal from '../../../components/admin/KelolaMentee/ImportExcelModal';
 import LoadingState from '../../../components/common/LoadingState';
 
 const KelolaMentee = () => {
@@ -32,6 +35,9 @@ const KelolaMentee = () => {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedMentee, setSelectedMentee] = useState(null);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
 
   const [filters, setFilters] = useState({
@@ -55,18 +61,39 @@ const KelolaMentee = () => {
   useEffect(() => {
     fetchMentees(currentPage);
     fetchGenderStats();
-  }, [currentPage, filters]);
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (filters.gender !== '' || filters.status !== '') {
+      fetchMentees(1);
+      setCurrentPage(1);
+    }
+  }, [filters]);
 
   const fetchMentees = async (page = 1) => {
     try {
       setLoading(true);
       const params = {
         page: page,
-        per_page: 10,
-        ...(searchTerm && { search: searchTerm }),
-        ...(filters.gender && { gender: filters.gender }),
-        ...(filters.status && { status: filters.status })
+        per_page: 10
       };
+      
+      // Add search parameter
+      if (searchTerm && searchTerm.trim() !== '') {
+        params.search = searchTerm.trim();
+      }
+      
+      // Add filter parameters
+      if (filters.gender && filters.gender !== '') {
+        params.gender = filters.gender;
+      }
+      
+      if (filters.status && filters.status !== '') {
+        params.status = filters.status;
+      }
+      
+
+      
       const response = await api.get('/mentees', { params });
       setMentees(response.data.data || []);
       setPagination(response.data.pagination || {
@@ -168,22 +195,76 @@ const KelolaMentee = () => {
   };
 
   const handleFilterChange = (key, value) => {
+
     setFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
   };
 
   const handleSearchChange = (value) => {
     setSearchTerm(value);
-    setCurrentPage(1);
   };
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchMentees(currentPage);
+      if (searchTerm !== undefined) {
+        fetchMentees(1);
+        setCurrentPage(1);
+      }
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
+      if (validTypes.includes(file.type)) {
+        setUploadFile(file);
+        setShowUploadModal(true);
+      } else {
+        toast.error('File harus berformat Excel (.xlsx, .xls) atau CSV');
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleImportExcel = async () => {
+    if (!uploadFile) return;
+    
+    try {
+      setUploadLoading(true);
+      const result = await importMentees(uploadFile);
+      
+      if (result.status === 'success') {
+        const failureCount = result.failures_count || 0;
+        
+        if (failureCount > 0) {
+          // Tampilkan setiap error dalam toast terpisah
+          result.failures.forEach(failure => {
+            failure.errors.forEach(error => {
+              toast.error(`Baris ${failure.row}: ${error}`, {
+                duration: 6000
+              });
+            });
+          });
+          
+          toast.success(`${result.message} (${failureCount} baris gagal)`);
+        } else {
+          toast.success(result.message);
+        }
+        
+        setUploadFile(null);
+        setShowUploadModal(false);
+        fetchMentees(currentPage);
+        fetchGenderStats();
+        document.getElementById('excel-upload').value = '';
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Gagal import data');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
 
   return (
     <Layout activeMenu="Kelola Mentee">
@@ -223,6 +304,24 @@ const KelolaMentee = () => {
                 <span>Hapus ({selectedMentees.length})</span>
               </button>
             )}
+            <div className="relative">
+              <input
+                id="excel-upload"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => document.getElementById('excel-upload').click()}
+                className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg border ${
+                  isDark ? 'border-green-600 text-green-400 hover:bg-green-900/20' : 'border-green-300 text-green-700 hover:bg-green-50'
+                } transition-colors`}
+              >
+                <Upload size={20} />
+                <span>Import Excel</span>
+              </button>
+            </div>
             <button
               onClick={() => navigate('/admin/kelola-mentee/tambah')}
               className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all"
@@ -343,7 +442,10 @@ const KelolaMentee = () => {
                 ) : mentees.length === 0 ? (
                   <tr>
                     <td colSpan="8" className={`px-6 py-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Tidak ada data mentee
+                      {filters.status === 'Non-Aktif' ? 'Tidak ada mentee dengan status Non-Aktif' : 
+                       filters.gender ? `Tidak ada mentee ${filters.gender}` :
+                       searchTerm ? 'Tidak ada mentee yang sesuai dengan pencarian' :
+                       'Tidak ada data mentee'}
                     </td>
                   </tr>
                 ) : (
@@ -533,6 +635,19 @@ const KelolaMentee = () => {
         onClose={() => setShowBulkDeleteModal(false)}
         onConfirm={handleBulkDelete}
         selectedCount={selectedMentees.length}
+      />
+
+      {/* Import Excel Modal */}
+      <ImportExcelModal
+        isOpen={showUploadModal}
+        onClose={() => {
+          setShowUploadModal(false);
+          setUploadFile(null);
+          document.getElementById('excel-upload').value = '';
+        }}
+        onConfirm={handleImportExcel}
+        fileName={uploadFile?.name}
+        loading={uploadLoading}
       />
     </Layout>
   );

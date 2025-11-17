@@ -6,6 +6,7 @@ use App\Http\Requests\AnnouncementRequest;
 use App\Http\Resources\AnnouncementResource;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class AnnouncementController extends Controller
@@ -105,7 +106,7 @@ class AnnouncementController extends Controller
     public function store(AnnouncementRequest $request)
     {
         $data = $request->validated();
-        $data['user_id'] = auth()->id();
+        $data['user_id'] = Auth::id();
         
         if ($request->hasFile('file')) {
             $file = $request->file('file');

@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { logout } from '../../api/auth';
 import { useTheme } from '../../contexts/ThemeContext';
+import { getProfile } from '../../api/profile';
 import { 
   Menu, 
   Moon,
   Sun,
-  Users, 
   UserCog, 
   FileText,
   LogOut
@@ -19,8 +19,31 @@ import logoGelap from '../../assets/images/logo/LogoShaf_Gelap.png';
 
 const Header = ({ toggleSidebar, onLogoutClick }) => {
   const [profileOpen, setProfileOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const response = await getProfile();
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    };
+    
+    const handleProfileUpdate = (event) => {
+      setUserData(event.detail);
+    };
+    
+    loadUserData();
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, []);
 
 
 
@@ -59,37 +82,48 @@ const Header = ({ toggleSidebar, onLogoutClick }) => {
           <h1 className={`text-xl font-bold tracking-wide ${
             isDark ? 'text-white' : 'text-gray-800'
           }`}>
-            Jejak Liqo - Shaf Pembangunan
+            Sahabat Liqo
           </h1>
         </div>
 
         <div className="flex items-center space-x-4">
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 180 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={toggleTheme}
-            className={`p-2 rounded-lg hover:shadow-lg transition-all ${
-              isDark 
-                ? 'bg-gray-700 hover:bg-gray-600 text-yellow-500'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-            }`}
-          >
-            {isDark ? (
-              <Sun size={20} />
-            ) : (
-              <Moon size={20} />
-            )}
-          </motion.button>
-
           <div className="relative">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <div
               onClick={() => setProfileOpen(!profileOpen)}
-              className="w-10 h-10 bg-gradient-to-br from-[#4DABFF] to-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:shadow-lg transition-all"
+              className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg"
             >
-              <span className="text-white font-semibold text-sm">SA</span>
-            </motion.div>
+              {userData?.profile?.profile_picture ? (
+                <img 
+                  src={`${import.meta.env.VITE_API_BASE_URL}/storage/${userData.profile.profile_picture}`}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-br from-[#4DABFF] to-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">
+                    {userData?.profile?.full_name ? userData.profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 'SA'}
+                  </span>
+                </div>
+              )}
+              
+              <div className={`hidden md:block ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                <p className="font-semibold text-sm leading-tight">
+                  {userData?.profile?.full_name || 'Super Admin'}
+                </p>
+                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {userData?.email || 'Loading...'}
+                </p>
+              </div>
+              
+              <svg 
+                className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180' : ''} ${isDark ? 'text-gray-400' : 'text-gray-600'}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
 
             <AnimatePresence>
               {profileOpen && (
@@ -113,34 +147,25 @@ const Header = ({ toggleSidebar, onLogoutClick }) => {
                     }`}
                   >
                     <div className="p-4 bg-gradient-to-r from-[#4DABFF] to-blue-600 text-white">
-                      <p className="font-semibold">Super Admin</p>
-                      <p className="text-sm text-blue-100">admin@jejakliqo.com</p>
+                      <p className="font-semibold">{userData?.profile?.full_name || 'Super Admin'}</p>
+                      <p className="text-sm text-blue-100">{userData?.email || 'Loading...'}</p>
                     </div>
                     <div className="py-2">
-                      <button className={`w-full px-4 py-3 text-left transition-colors flex items-center space-x-3 ${
-                        isDark 
-                          ? 'hover:bg-gray-700 text-gray-300' 
-                          : 'hover:bg-gray-100 text-gray-700'
-                      }`}>
-                        <Users size={18} />
-                        <span>Profil Saya</span>
-                      </button>
-                      <button className={`w-full px-4 py-3 text-left transition-colors flex items-center space-x-3 ${
-                        isDark 
-                          ? 'hover:bg-gray-700 text-gray-300' 
-                          : 'hover:bg-gray-100 text-gray-700'
-                      }`}>
+                      <button 
+                        onClick={() => {
+                          setProfileOpen(false);
+                          navigate('/superadmin/settings');
+                        }}
+                        className={`w-full px-4 py-3 text-left transition-colors flex items-center space-x-3 ${
+                          isDark 
+                            ? 'hover:bg-gray-700 text-gray-300' 
+                            : 'hover:bg-gray-100 text-gray-700'
+                        }`}
+                      >
                         <UserCog size={18} />
                         <span>Pengaturan</span>
                       </button>
-                      <button className={`w-full px-4 py-3 text-left transition-colors flex items-center space-x-3 ${
-                        isDark 
-                          ? 'hover:bg-gray-700 text-gray-300' 
-                          : 'hover:bg-gray-100 text-gray-700'
-                      }`}>
-                        <FileText size={18} />
-                        <span>Aktivitas</span>
-                      </button>
+
                       <div className={`my-2 ${
                         isDark ? 'border-t border-gray-600' : 'border-t border-gray-200'
                       }`}></div>

@@ -15,7 +15,8 @@ import {
   Megaphone,
   Settings,
   ChevronRight,
-  User
+  User,
+  Upload
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' }) => {
@@ -116,12 +117,13 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' 
                     key={`menu-${index}`}
                     whileHover={{ scale: 1.02, x: isCollapsed ? 0 : 4 }}
                     whileTap={{ scale: 0.98 }}
+                    transition={{ duration: 0 }}
                     onClick={() => {
                       if (item.path !== '#') {
                         navigate(item.path);
                       }
                     }}
-                    className={`w-full flex items-center ${isCollapsed && window.innerWidth >= 1024 ? 'justify-center px-2' : 'space-x-3 px-4'} py-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center ${isCollapsed && window.innerWidth >= 1024 ? 'justify-center px-2' : 'space-x-3 px-4'} py-3 rounded-xl transition-none ${
                       item.active
                         ? 'bg-gradient-to-r from-[#4DABFF] to-blue-500 text-white shadow-lg shadow-blue-500/30'
                         : isDark 

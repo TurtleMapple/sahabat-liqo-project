@@ -82,6 +82,7 @@ class MeetingController extends Controller
             'attendances.*.mentee_id' => 'required|exists:mentees,id',
             'attendances.*.status' => 'required|in:Hadir,Sakit,Izin,Alpa',
             'attendances.*.notes' => 'nullable|string|max:255',
+
         ]);
 
         // Get group mentor
@@ -94,6 +95,28 @@ class MeetingController extends Controller
             ], 422);
         }
 
+        // Handle photo uploads
+        $photoUrls = [];
+        
+        if ($request->hasFile('photos')) {
+            $files = $request->file('photos');
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    if ($file->isValid()) {
+                        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        $file->move(public_path('storage/meeting_photos'), $filename);
+                        $photoUrls[] = asset('storage/meeting_photos/' . $filename);
+                    }
+                }
+            } else {
+                if ($files->isValid()) {
+                    $filename = time() . '_' . uniqid() . '.' . $files->getClientOriginalExtension();
+                    $files->move(public_path('storage/meeting_photos'), $filename);
+                    $photoUrls[] = asset('storage/meeting_photos/' . $filename);
+                }
+            }
+        }
+
         $meeting = Meeting::create([
             'group_id' => $request->group_id,
             'mentor_id' => $group->mentor_id,
@@ -102,6 +125,7 @@ class MeetingController extends Controller
             'topic' => $request->topic,
             'notes' => $request->notes,
             'meeting_type' => $request->meeting_type,
+            'photos' => $photoUrls,
         ]);
 
         // Create attendances if provided
@@ -263,6 +287,58 @@ class MeetingController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => "Catatan pertemuan '{$meetingTopic}' berhasil dihapus permanen",
+        ]);
+    }
+
+    public function bulkRestore(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|integer|exists:meetings,id',
+        ]);
+
+        $meetings = Meeting::onlyTrashed()->whereIn('id', $request->ids)->get();
+        
+        if ($meetings->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada pertemuan yang ditemukan untuk dipulihkan',
+            ], 404);
+        }
+
+        foreach ($meetings as $meeting) {
+            $meeting->restore();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => count($request->ids) . ' catatan pertemuan berhasil dipulihkan',
+        ]);
+    }
+
+    public function bulkForceDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|integer|exists:meetings,id',
+        ]);
+
+        $meetings = Meeting::onlyTrashed()->whereIn('id', $request->ids)->get();
+        
+        if ($meetings->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada pertemuan yang ditemukan untuk dihapus',
+            ], 404);
+        }
+
+        foreach ($meetings as $meeting) {
+            $meeting->forceDelete();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => count($request->ids) . ' catatan pertemuan berhasil dihapus permanen',
         ]);
     }
 

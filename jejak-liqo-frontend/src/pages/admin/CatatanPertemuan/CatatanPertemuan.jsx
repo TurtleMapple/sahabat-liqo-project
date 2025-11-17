@@ -6,6 +6,7 @@ import Layout from '../../../components/admin/Layout';
 import meetingsAPI from '../../../api/meetings';
 import MeetingDetailModal from '../../../components/admin/Catat Pertemuan/MeetingDetailModal';
 import MeetingDeleteModal from '../../../components/admin/Catat Pertemuan/MeetingDeleteModal';
+import BulkDeleteModal from '../../../components/admin/Catat Pertemuan/BulkDeleteModal';
 import CardTotalAndWeek from '../../../components/admin/Catat Pertemuan/CardTotalAndWeek';
 import { 
   PlusIcon, 
@@ -21,7 +22,8 @@ import {
   ChartBarIcon,
   ComputerDesktopIcon,
   BuildingOfficeIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import LoadingState from '../../../components/common/LoadingState';
@@ -46,6 +48,9 @@ const CatatanPertemuan = () => {
   const [statistics, setStatistics] = useState({});
   const [isDeleting, setIsDeleting] = useState(false);
   const [hasShownError, setHasShownError] = useState(false);
+  const [selectedMeetings, setSelectedMeetings] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchMeetings();
@@ -117,6 +122,39 @@ const CatatanPertemuan = () => {
       toast.error('Gagal menghapus catatan pertemuan');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      setIsBulkDeleting(true);
+      await Promise.all(selectedMeetings.map(id => meetingsAPI.deleteMeeting(id)));
+      toast.success(`${selectedMeetings.length} catatan pertemuan berhasil dihapus`);
+      setShowBulkDeleteModal(false);
+      setSelectedMeetings([]);
+      fetchMeetings();
+      fetchStatistics();
+    } catch (error) {
+      console.error('Error bulk deleting meetings:', error);
+      toast.error('Gagal menghapus catatan pertemuan');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleSelectMeeting = (meetingId) => {
+    setSelectedMeetings(prev => 
+      prev.includes(meetingId) 
+        ? prev.filter(id => id !== meetingId)
+        : [...prev, meetingId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedMeetings.length === meetings.length) {
+      setSelectedMeetings([]);
+    } else {
+      setSelectedMeetings(meetings.map(meeting => meeting.id));
     }
   };
 
@@ -217,7 +255,31 @@ const CatatanPertemuan = () => {
               Kelola catatan pertemuan kelompok mentoring
             </p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-3">
+            {selectedMeetings.length > 0 && (
+              <div className="flex items-center space-x-3">
+                <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {selectedMeetings.length} dipilih
+                </span>
+                <button
+                  onClick={() => setShowBulkDeleteModal(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                  <span>Hapus Terpilih</span>
+                </button>
+                <button
+                  onClick={() => setSelectedMeetings([])}
+                  className={`px-3 py-2 rounded-xl transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Batal
+                </button>
+              </div>
+            )}
             <button
               onClick={() => navigate('/admin/catatan-pertemuan/trashed')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors ${
@@ -455,23 +517,70 @@ const CatatanPertemuan = () => {
             <p>Mulai buat catatan pertemuan pertama Anda</p>
           </div>
         ) : (
-          <motion.div 
-            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            {meetings.map((meeting) => (
-              <motion.div
-                key={meeting.id}
+          <>
+            {/* Bulk Actions */}
+            {meetings.length > 0 && (
+              <motion.div 
+                className={`flex items-center justify-between p-4 rounded-xl mb-4 ${isDark ? 'bg-gray-800' : 'bg-white'} shadow-sm`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-6 rounded-2xl shadow-sm border ${
-                  isDark 
-                    ? 'bg-gray-800 border-gray-700 hover:shadow-lg hover:border-gray-600' 
-                    : 'bg-white border-gray-200 hover:shadow-md hover:border-gray-300'
-                } transition-all duration-200`}
+                transition={{ duration: 0.5, delay: 0.35 }}
               >
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleSelectAll}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                      selectedMeetings.length === meetings.length
+                        ? 'bg-blue-500 text-white'
+                        : isDark 
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                      selectedMeetings.length === meetings.length
+                        ? 'bg-white border-white'
+                        : 'border-current'
+                    }`}>
+                      {selectedMeetings.length === meetings.length && (
+                        <div className="w-full h-full rounded-full bg-blue-500 scale-50"></div>
+                      )}
+                    </div>
+                    <span>
+                      {selectedMeetings.length === meetings.length ? 'Batalkan Semua' : 'Pilih Semua'}
+                    </span>
+                  </button>
+                  {selectedMeetings.length > 0 && (
+                    <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {selectedMeetings.length} dari {meetings.length} pertemuan dipilih
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+            {meetings.map((meeting) => {
+              const isSelected = selectedMeetings.includes(meeting.id);
+              
+              return (
+                <motion.div
+                  key={meeting.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-6 rounded-2xl shadow-sm border transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
+                      : isDark 
+                        ? 'bg-gray-800 border-gray-700 hover:shadow-lg hover:border-gray-600' 
+                        : 'bg-white border-gray-200 hover:shadow-md hover:border-gray-300'
+                  }`}
+                >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -494,6 +603,20 @@ const CatatanPertemuan = () => {
                       {meeting.group?.name}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleSelectMeeting(meeting.id)}
+                    className={`w-5 h-5 rounded-full border-2 transition-all ${
+                      isSelected
+                        ? 'bg-blue-500 border-blue-500'
+                        : isDark 
+                          ? 'border-gray-600 hover:border-gray-500' 
+                          : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </button>
                 </div>
 
                 {/* Meeting Info */}
@@ -522,6 +645,15 @@ const CatatanPertemuan = () => {
                   </div>
                 </div>
 
+                {/* Notes Preview */}
+                {meeting.notes && (
+                  <div className={`p-3 rounded-lg mb-4 ${isDark ? 'bg-gray-700/30' : 'bg-gray-50'}`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-3`}>
+                      {meeting.notes}
+                    </p>
+                  </div>
+                )}
+
                 {/* Attendance Stats */}
                 {meeting.attendances && meeting.attendances.length > 0 && (
                   <div className="grid grid-cols-4 gap-1 mb-4">
@@ -549,15 +681,6 @@ const CatatanPertemuan = () => {
                         {getAttendanceStats(meeting.attendances).alpa}
                       </p>
                     </div>
-                  </div>
-                )}
-
-                {/* Notes Preview */}
-                {meeting.notes && (
-                  <div className={`p-3 rounded-lg mb-4 ${isDark ? 'bg-gray-700/30' : 'bg-gray-50'}`}>
-                    <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-3`}>
-                      {meeting.notes}
-                    </p>
                   </div>
                 )}
 
@@ -604,8 +727,10 @@ const CatatanPertemuan = () => {
                   </button>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </motion.div>
+          </>
         )}
 
         {/* Modals */}
@@ -627,6 +752,16 @@ const CatatanPertemuan = () => {
           onConfirm={handleDeleteMeeting}
           meeting={selectedMeeting}
           isDeleting={isDeleting}
+        />
+
+        <BulkDeleteModal
+          isOpen={showBulkDeleteModal}
+          onClose={() => {
+            setShowBulkDeleteModal(false);
+          }}
+          onConfirm={handleBulkDelete}
+          selectedCount={selectedMeetings.length}
+          isDeleting={isBulkDeleting}
         />
       </div>
     </Layout>

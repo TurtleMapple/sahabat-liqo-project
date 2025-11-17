@@ -41,6 +41,15 @@ class AuthController extends Controller
         if ($user->blocked_at) {
             $contact = $user->role === 'mentor' ? 'admin' : 'super admin';
             $blockedAt = $user->blocked_at->format('d/m/Y H:i:s');
+            
+            // Log for debugging
+            Log::info('Blocked account login attempt', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'user_role' => $user->role,
+                'blocked_at' => $user->blocked_at,
+                'formatted_blocked_at' => $blockedAt
+            ]);
 
             LoginAttempt::create([
                 'user_id' => $user->id,
@@ -77,14 +86,23 @@ class AuthController extends Controller
         // Login berhasil
         $status = 'Success';
 
-        // 🔒 Strict Single Session
+        // 🔒 Strict Single Session - Hapus semua token lama
         $user->tokens()->delete();
 
+        // Generate unique session ID untuk tracking
+        $sessionId = Str::uuid();
+        
         $token = $user->tokens()->create([
-            'name' => 'auth-token',
+            'name' => 'auth-token-' . $sessionId,
             'token' => hash('sha256', $plainTextToken = Str::random(80)),
             'abilities' => ['*'],
             'expires_at' => now()->addHours(3),
+        ]);
+
+        // Update user dengan session info
+        $user->update([
+            'last_login_at' => now(),
+            'current_session_id' => $sessionId,
         ]);
 
         // 🧠 Catat login attempt berhasil
@@ -102,6 +120,7 @@ class AuthController extends Controller
                 'user' => new UserResource($user),
                 'token' => $plainTextToken,
                 'token_expires_at' => $token->expires_at->timestamp,
+                'session_id' => $sessionId,
             ],
         ]);
     }

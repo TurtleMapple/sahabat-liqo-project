@@ -13,11 +13,17 @@ class MenteeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Mentee::with(['group'])
-            ->whereHas('group', function($q) {
-                $q->whereNull('deleted_at');
-            })
-            ->orWhereNull('group_id');
+        // Log request parameters for debugging
+        \Log::info('Mentee index request params:', $request->all());
+        
+        $query = Mentee::with(['group']);
+        
+        // Apply group filter first (only show mentees with active groups or no group)
+        $query->where(function($q) {
+            $q->whereHas('group', function($subQ) {
+                $subQ->whereNull('deleted_at');
+            })->orWhereNull('group_id');
+        });
 
         // Search functionality
         if ($request->has('search') && $request->search) {
@@ -36,12 +42,12 @@ class MenteeController extends Controller
         }
 
         // Filter by status
-        if ($request->has('status') && $request->status) {
+        if ($request->has('status') && $request->status !== null && $request->status !== '') {
             $query->where('status', $request->status);
         }
 
         // Filter by gender
-        if ($request->has('gender') && $request->gender) {
+        if ($request->has('gender') && $request->gender !== null && $request->gender !== '') {
             $query->where('gender', $request->gender);
         }
 
@@ -53,6 +59,13 @@ class MenteeController extends Controller
         // Pagination
         $perPage = $request->get('per_page', 10);
         $mentees = $query->paginate($perPage);
+        
+        // Log final query for debugging
+        \Log::info('Final mentees query result count:', [
+            'count' => $mentees->total(),
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
 
         return response()->json([
             'status' => 'success',

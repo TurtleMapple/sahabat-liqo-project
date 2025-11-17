@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Users, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Users, ArrowLeft, Camera, Upload } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 import api from '../../../api/axiosInstance';
@@ -42,16 +42,8 @@ const AddAdmin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.nama_lengkap || !formData.email) {
-      toast.error('Nama lengkap dan email wajib diisi');
-      return;
-    }
-    if (!formData.password) {
-      toast.error('Password wajib diisi untuk admin baru');
-      return;
-    }
-    if (formData.profile_status === 'Non-Aktif' && !formData.status_note) {
-      toast.error('Alasan status non-aktif wajib diisi');
+    if (!formData.nama_lengkap || !formData.email || !formData.password || !formData.gender) {
+      toast.error('Nama lengkap, email, password, dan gender wajib diisi');
       return;
     }
 
@@ -65,8 +57,8 @@ const AddAdmin = () => {
         phone_number: formData.phone || null,
         address: formData.alamat || null,
         job: formData.job || null,
-        status: formData.profile_status || 'Aktif',
-        gender: formData.gender || null,
+        status: 'Aktif',
+        gender: formData.gender,
         status_note: formData.status_note || null,
         birth_date: formData.birth_date || null,
         hobby: formData.hobby || null
@@ -79,7 +71,7 @@ const AddAdmin = () => {
       // Always use FormData for file uploads
       const finalData = new FormData();
       Object.keys(requestData).forEach(key => {
-        if (requestData[key] !== null) {
+        if (requestData[key] !== null && requestData[key] !== '') {
           finalData.append(key, requestData[key]);
         }
       });
@@ -101,10 +93,8 @@ const AddAdmin = () => {
         icon: '✅'
       });
       
-      // Small delay to show toast before redirect
-      setTimeout(() => {
-        navigate('/superadmin/kelola-admin');
-      }, 1000);
+      // Redirect immediately
+      navigate('/superadmin/kelola-admin');
     } catch (error) {
       console.error('Failed to add admin:', error);
       console.log('Error response:', error.response);
@@ -189,43 +179,21 @@ const AddAdmin = () => {
           </div>
 
           {/* Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`rounded-2xl shadow-xl border backdrop-blur-sm ${
-              isDark 
-                ? 'bg-gray-800/95 border-gray-700/50' 
-                : 'bg-white/95 border-gray-200/50'
-            }`}
-          >
-            <form onSubmit={handleSubmit} className="p-8">
-              {/* Foto Profil */}
-              <div className="mb-6">
-                <label className={`block text-sm font-medium mb-2 ${
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Foto Profil
-                </label>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Section 1: Foto Profil */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`p-6 rounded-xl border ${
+                isDark ? 'bg-gray-800/95 border-gray-700/50' : 'bg-blue-50/50 border-blue-200'
+              }`}
+            >
+              <h3 className={`text-lg font-semibold mb-4 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Foto Profil</h3>
                 <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    {previewImage ? (
-                      <img 
-                        src={previewImage} 
-                        alt="Preview"
-                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
-                      />
-                    ) : (
-                      <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-dashed ${
-                        isDark 
-                          ? 'bg-gray-700 border-gray-600' 
-                          : 'bg-gray-200 border-gray-300'
-                      }`}>
-                        <Users size={24} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col justify-start">
+                  <div className="relative group">
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/jpg,image/gif"
@@ -238,15 +206,30 @@ const AddAdmin = () => {
                           reader.readAsDataURL(file);
                         }
                       }}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
-                        isDark 
-                          ? 'bg-gray-700 border-gray-600 text-white' 
-                          : 'bg-white border-gray-300 text-gray-900'
-                      }`}
+                      className="hidden"
+                      id="profile-picture-input"
                     />
-                    <p className={`text-xs mt-1 ${
-                      isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}>Max 2MB. Format: JPEG, PNG, JPG, GIF</p>
+                    <label htmlFor="profile-picture-input" className="cursor-pointer">
+                      <div className={`relative w-32 h-32 rounded-2xl overflow-hidden transition-all duration-300 group-hover:scale-105 ${
+                        isDark ? 'bg-gradient-to-br from-blue-600 to-purple-700 shadow-lg shadow-blue-600/20' : 'bg-gradient-to-br from-[#4DABFF] to-blue-600 shadow-lg shadow-blue-500/20'
+                      }`}>
+                        {previewImage ? (
+                          <img 
+                            src={previewImage} 
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                            <Upload size={32} className="mb-2" />
+                            <span className="text-sm font-medium">Upload Foto</span>
+                          </div>
+                        )}
+                        <div className={`absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center`}>
+                          <Camera size={24} className="text-white" />
+                        </div>
+                      </div>
+                    </label>
                     {previewImage && (
                       <button
                         type="button"
@@ -254,21 +237,43 @@ const AddAdmin = () => {
                           setPreviewImage(null);
                           setFormData({...formData, profile_picture: null});
                         }}
-                        className="mt-2 text-xs text-red-600 hover:text-red-800 text-left"
+                        className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+                          isDark ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/30' : 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
+                        }`}
                       >
-                        Hapus Foto
+                        <Users size={14} className="text-white" />
                       </button>
                     )}
                   </div>
-                </div>
+                  <div className="flex-1">
+                    <p className={`text-sm mb-2 ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Upload foto profil admin</p>
+                    <p className={`text-xs ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>Max 2MB • Format: JPEG, PNG, JPG, GIF</p>
+                  </div>
               </div>
+            </motion.div>
 
+            {/* Form Data */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className={`p-6 rounded-xl border ${
+                isDark ? 'bg-gray-800/95 border-gray-700/50' : 'bg-white/95 border-gray-200/50'
+              }`}
+            >
+              <h3 className={`text-lg font-semibold mb-4 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Data Admin</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Nama Lengkap *
+                    Nama Lengkap <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -288,7 +293,7 @@ const AddAdmin = () => {
                   <label className={`block text-sm font-medium mb-2 ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Email *
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -308,7 +313,7 @@ const AddAdmin = () => {
                   <label className={`block text-sm font-medium mb-2 ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Password *
+                    Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -337,6 +342,28 @@ const AddAdmin = () => {
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
+                      isDark 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                    required
+                  >
+                    <option value="">Pilih Gender</option>
+                    <option value="Ikhwan">Ikhwan</option>
+                    <option value="Akhwat">Akhwat</option>
+                  </select>
                 </div>
 
                 <div>
@@ -400,46 +427,6 @@ const AddAdmin = () => {
                   <label className={`block text-sm font-medium mb-2 ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Alamat
-                  </label>
-                  <textarea
-                    value={formData.alamat}
-                    onChange={(e) => setFormData({...formData, alamat: e.target.value})}
-                    rows={3}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
-                      isDark 
-                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                    }`}
-                    placeholder="Masukkan alamat lengkap"
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    isDark ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Gender
-                  </label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
-                      isDark 
-                        ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    }`}
-                  >
-                    <option value="">Pilih Gender</option>
-                    <option value="Ikhwan">Ikhwan</option>
-                    <option value="Akhwat">Akhwat</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    isDark ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
                     Tanggal Lahir
                   </label>
                   <input
@@ -473,52 +460,34 @@ const AddAdmin = () => {
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className={`block text-sm font-medium mb-2 ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Status Profil
+                    Alamat
                   </label>
-                  <select
-                    value={formData.profile_status}
-                    onChange={(e) => setFormData({...formData, profile_status: e.target.value})}
+                  <textarea
+                    value={formData.alamat}
+                    onChange={(e) => setFormData({...formData, alamat: e.target.value})}
+                    rows={3}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
                       isDark 
-                        ? 'bg-gray-700 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                     }`}
-                  >
-                    <option value="Aktif">Aktif</option>
-                    <option value="Non-Aktif">Non-Aktif</option>
-                  </select>
+                    placeholder="Masukkan alamat lengkap"
+                  />
                 </div>
-
-                {formData.profile_status === 'Non-Aktif' && (
-                  <div className="md:col-span-2">
-                    <label className={`block text-sm font-medium mb-2 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Alasan Status Non-Aktif *
-                    </label>
-                    <textarea
-                      value={formData.status_note}
-                      onChange={(e) => setFormData({...formData, status_note: e.target.value})}
-                      rows={3}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
-                        isDark 
-                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                      }`}
-                      placeholder="Jelaskan alasan mengapa status admin diubah menjadi non-aktif..."
-                      required
-                    />
-                  </div>
-                )}
               </div>
-              
-              <div className={`flex flex-col sm:flex-row gap-3 pt-8 mt-8 border-t ${
-                isDark ? 'border-gray-700/50' : 'border-gray-200/50'
-              }`}>
+            </motion.div>
+            
+            {/* Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-3"
+            >
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -548,9 +517,8 @@ const AddAdmin = () => {
                     'Simpan Admin'
                   )}
                 </motion.button>
-              </div>
-            </form>
-          </motion.div>
+            </motion.div>
+          </form>
         </main>
       </div>
     </div>

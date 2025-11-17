@@ -13,10 +13,12 @@ class GroupResource extends JsonResource
             'id' => $this->id,
             'group_name' => $this->group_name,
             'description' => $this->description,
+            'gender' => $this->mentor?->profile?->gender,
             'mentor' => $this->when($this->mentor, [
                 'id' => $this->mentor?->id,
                 'email' => $this->mentor?->email,
                 'name' => $this->mentor?->profile?->full_name ?? $this->mentor?->email,
+                'gender' => $this->mentor?->profile?->gender,
             ]),
             'mentees' => MenteeResource::collection($this->whenLoaded('mentees')),
             'mentees_count' => $this->whenLoaded('mentees', function() {

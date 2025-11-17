@@ -55,6 +55,16 @@ const meetingsAPI = {
   forceDeleteMeeting: (id) => {
     return api.delete(`/meetings/${id}/force`);
   },
+
+  // Bulk restore meetings
+  bulkRestoreMeetings: (ids) => {
+    return api.post('/meetings/bulk-restore', { ids });
+  },
+
+  // Bulk force delete meetings
+  bulkForceDeleteMeetings: (ids) => {
+    return api.post('/meetings/bulk-force-delete', { ids });
+  },
 };
 
 export default meetingsAPI;

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosInstance';
+import { getProfile } from '../../api/profile';
+import { getAnnouncements } from '../../api/announcements';
 import { useTheme } from '../../contexts/ThemeContext';
 import { 
   TrendingUp,
@@ -10,12 +11,11 @@ import {
   UsersRound,
   GraduationCap,
   Users,
-  Megaphone
+  Megaphone,
+  Calendar,
+  User
 } from 'lucide-react';
-import Sidebar from '../../components/superadmin/Sidebar';
-import Header from '../../components/superadmin/Header';
-import LogoutConfirmModal from '../../components/ui/LogoutConfirmModal';
-import { logout } from '../../api/auth';
+import Layout from '../../components/superadmin/Layout';
 
 // Get trend status from change value
 const getTrendStatus = (change) => {
@@ -66,12 +66,7 @@ const getStatsConfig = (data) => [
   }
 ];
 
-const announcements = [
-  { id: 1, title: 'Pembaruan Sistem Dashboard', date: '15 Oktober 2025' },
-  { id: 2, title: 'Meeting Evaluasi Bulanan', date: '12 Oktober 2025' },
-  { id: 3, title: 'Pelatihan Admin Baru', date: '10 Oktober 2025' },
-  { id: 4, title: 'Update Kebijakan Privasi', date: '8 Oktober 2025' }
-];
+
 
 
 
@@ -126,23 +121,125 @@ const StatsCard = ({ stat, index }) => {
 };
 
 // Welcome Card Component
-const WelcomeCard = () => {
+const WelcomeCard = ({ userData }) => {
+  const { isDark } = useTheme();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  const currentHour = currentTime.getHours();
+  const greeting = currentHour < 12 ? 'Selamat pagi' : currentHour < 17 ? 'Selamat siang' : 'Selamat malam';
+  
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="bg-gradient-to-r from-[#4DABFF] to-blue-600 rounded-2xl shadow-xl p-8 text-white mb-6"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`relative overflow-hidden rounded-3xl shadow-2xl p-8 mb-6 ${
+        isDark 
+          ? 'bg-gradient-to-br from-gray-800 via-gray-900 to-black border border-gray-700' 
+          : 'bg-gradient-to-br from-white via-blue-50 to-indigo-100 border border-blue-200'
+      }`}
     >
-      <h2 className="text-2xl md:text-3xl font-bold mb-2">
-        Selamat datang kembali, Super Admin! 👋
-      </h2>
-      <p className="text-blue-100 text-lg">Semoga harimu produktif 💪</p>
+      <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
+        <div className={`w-full h-full rounded-full ${
+          isDark ? 'bg-gradient-to-br from-blue-400 to-purple-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+        }`}></div>
+      </div>
+      
+      <div className="relative z-10 flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+              isDark ? 'bg-gradient-to-br from-blue-600 to-purple-700' : 'bg-gradient-to-br from-[#4DABFF] to-blue-600'
+            }`}>
+              {userData?.profile?.profile_picture ? (
+                <img 
+                  src={`${import.meta.env.VITE_API_BASE_URL}/storage/${userData.profile.profile_picture}`}
+                  alt="Profile"
+                  className="w-full h-full rounded-2xl object-cover"
+                />
+              ) : (
+                <span className="text-white font-bold text-lg">
+                  {userData?.profile?.full_name ? userData.profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : 'SA'}
+                </span>
+              )}
+            </div>
+            <div>
+              <h2 className={`text-2xl md:text-3xl font-bold ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
+                {greeting}, {userData?.profile?.nickname || userData?.profile?.full_name?.split(' ')[0] || 'Super Admin'}! 👋
+              </h2>
+              <p className={`text-lg ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Semoga harimu produktif dan penuh berkah 💪
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-6">
+            <div className={`flex items-center px-4 py-2 rounded-xl ${
+              isDark ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-100 border border-blue-200'
+            }`}>
+              <div className={`w-3 h-3 rounded-full mr-2 animate-pulse ${
+                isDark ? 'bg-green-400' : 'bg-green-500'
+              }`}></div>
+              <span className={`text-sm font-medium ${
+                isDark ? 'text-green-400' : 'text-green-700'
+              }`}>Online</span>
+            </div>
+            
+            <div className={`flex items-center px-4 py-2 rounded-xl ${
+              isDark ? 'bg-purple-900/30 border border-purple-700' : 'bg-purple-100 border border-purple-200'
+            }`}>
+              <span className={`text-sm font-medium ${
+                isDark ? 'text-purple-400' : 'text-purple-700'
+              }`}>Super Administrator</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="hidden lg:block">
+          <div className={`text-right ${
+            isDark ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            <p className="text-sm font-medium">{currentTime.toLocaleDateString('id-ID', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</p>
+            <div className={`inline-flex items-center px-3 py-1 rounded-lg mt-1 ${
+              isDark ? 'bg-gray-700/50 border border-gray-600' : 'bg-white/70 border border-gray-200'
+            }`}>
+              <div className={`w-2 h-2 rounded-full mr-2 animate-pulse ${
+                isDark ? 'bg-blue-400' : 'bg-blue-500'
+              }`}></div>
+              <span className="text-lg font-mono font-bold tabular-nums">
+                {currentTime.toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit', 
+                  second: '2-digit'
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 };
 
 // Announcements Card Component
-const AnnouncementsCard = () => {
+const AnnouncementsCard = ({ announcements, loading }) => {
   const { isDark } = useTheme();
   
   return (
@@ -161,29 +258,65 @@ const AnnouncementsCard = () => {
         Pengumuman Terbaru
       </h3>
       <div className="space-y-3">
-        {announcements.map((announcement, index) => (
-          <motion.div
-            key={announcement.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 + index * 0.1 }}
-            whileHover={{ x: 5 }}
-            className={`p-4 rounded-xl transition-all cursor-pointer ${
-              isDark 
-                ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600' 
-                : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
-            }`}
-          >
-            <h4 className={`font-semibold mb-1 ${
-              isDark ? 'text-white' : 'text-gray-800'
+        {loading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className={`animate-pulse p-4 rounded-xl ${
+              isDark ? 'bg-gray-700' : 'bg-gray-100'
             }`}>
-              {announcement.title}
-            </h4>
-            <p className={`text-sm ${
-              isDark ? 'text-gray-400' : 'text-gray-500'
-            }`}>{announcement.date}</p>
-          </motion.div>
-        ))}
+              <div className={`h-4 w-3/4 rounded mb-2 ${
+                isDark ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
+              <div className={`h-3 w-1/2 rounded ${
+                isDark ? 'bg-gray-600' : 'bg-gray-300'
+              }`}></div>
+            </div>
+          ))
+        ) : announcements.length > 0 ? (
+          announcements.map((announcement) => (
+            <div
+              key={announcement.id}
+              className={`p-4 rounded-xl transition-colors cursor-pointer ${
+                isDark 
+                  ? 'bg-gray-700 hover:bg-gray-600 border border-gray-600' 
+                  : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <h4 className={`font-semibold mb-2 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>
+                {announcement.title}
+              </h4>
+              {announcement.content && (
+                <p className={`text-sm mb-3 line-clamp-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  {announcement.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                </p>
+              )}
+              <div className="flex items-center justify-between">
+                <div className={`flex items-center text-xs ${
+                  isDark ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  <Calendar size={12} className="mr-1" />
+                  {new Date(announcement.created_at).toLocaleDateString('id-ID')}
+                </div>
+                <div className={`flex items-center text-xs ${
+                  isDark ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  <User size={12} className="mr-1" />
+                  {announcement.author?.profile?.full_name || announcement.author?.email || 'Admin'}
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className={`text-center py-8 ${
+            isDark ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            <Megaphone size={32} className="mx-auto mb-2 opacity-50" />
+            <p>Belum ada pengumuman</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -309,36 +442,14 @@ const RecentAdminsTable = ({ recentAdmins, loading }) => {
 
 // Main Dashboard Component
 const Dashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [statsData, setStatsData] = useState([]);
   const [recentAdmins, setRecentAdmins] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingAdmins, setLoadingAdmins] = useState(true);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const { isDark } = useTheme();
-  const navigate = useNavigate();
-
-
-
-  const toggleSidebar = () => {
-    if (window.innerWidth >= 1024) {
-      setSidebarCollapsed(!sidebarCollapsed);
-    } else {
-      setSidebarOpen(!sidebarOpen);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Logout berhasil.');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Gagal logout, coba lagi.');
-    }
-    setShowLogoutModal(false);
-  };
 
   // Fetch dashboard statistics with comparison
   useEffect(() => {
@@ -379,71 +490,80 @@ const Dashboard = () => {
       }
     };
 
+    const fetchUserData = async () => {
+      try {
+        const response = await getProfile();
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await getAnnouncements({ per_page: 4, sort: 'created_at', order: 'desc' });
+        if (response.status === 'success') {
+          setAnnouncements(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch announcements:', error);
+        toast.error('Gagal memuat pengumuman');
+      } finally {
+        setLoadingAnnouncements(false);
+      }
+    };
+
     fetchStats();
     fetchRecentAdmins();
+    fetchUserData();
+    fetchAnnouncements();
   }, []);
 
   return (
-    <div className={`flex min-h-screen transition-colors duration-300 ${
-      isDark 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-        : 'bg-gradient-to-br from-[#4DABFF]/10 via-white to-[#4DABFF]/5'
-    }`}>
-      <Sidebar isOpen={sidebarOpen} isCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} activeMenu="Dashboard" />
-      
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-72'}`}>
-        <Header toggleSidebar={toggleSidebar} onLogoutClick={() => setShowLogoutModal(true)} />
+    <Layout activeMenu="Dashboard">
+      <div className="p-4 md:p-6 lg:p-8">
+        <WelcomeCard userData={userData} />
         
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <WelcomeCard />
-          
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {loading ? (
-              // Loading skeleton
-              Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className={`rounded-2xl shadow-md p-6 animate-pulse ${
-                  isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
-                }`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className={`h-4 rounded mb-2 w-24 ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-200'
-                      }`}></div>
-                      <div className={`h-8 rounded mb-2 w-16 ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-200'
-                      }`}></div>
-                      <div className={`h-4 rounded w-12 ${
-                        isDark ? 'bg-gray-600' : 'bg-gray-200'
-                      }`}></div>
-                    </div>
-                    <div className={`w-14 h-14 rounded-xl ${
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {loading ? (
+            // Loading skeleton
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className={`rounded-2xl shadow-md p-6 animate-pulse ${
+                isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
+              }`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className={`h-4 rounded mb-2 w-24 ${
+                      isDark ? 'bg-gray-600' : 'bg-gray-200'
+                    }`}></div>
+                    <div className={`h-8 rounded mb-2 w-16 ${
+                      isDark ? 'bg-gray-600' : 'bg-gray-200'
+                    }`}></div>
+                    <div className={`h-4 rounded w-12 ${
                       isDark ? 'bg-gray-600' : 'bg-gray-200'
                     }`}></div>
                   </div>
+                  <div className={`w-14 h-14 rounded-xl ${
+                    isDark ? 'bg-gray-600' : 'bg-gray-200'
+                  }`}></div>
                 </div>
-              ))
-            ) : (
-              statsData.map((stat, index) => (
-                <StatsCard key={stat.id} stat={stat} index={index} />
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          ) : (
+            statsData.map((stat, index) => (
+              <StatsCard key={stat.id} stat={stat} index={index} />
+            ))
+          )}
+        </div>
 
-          {/* Bottom Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AnnouncementsCard />
-            <RecentAdminsTable recentAdmins={recentAdmins} loading={loadingAdmins} />
-          </div>
-        </main>
+        {/* Bottom Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AnnouncementsCard announcements={announcements} loading={loadingAnnouncements} />
+          <RecentAdminsTable recentAdmins={recentAdmins} loading={loadingAdmins} />
+        </div>
       </div>
-      
-      <LogoutConfirmModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleLogout}
-      />
-    </div>
+    </Layout>
   );
 };
 

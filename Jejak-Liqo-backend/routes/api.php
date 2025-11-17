@@ -15,12 +15,18 @@ use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\MonthlyReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\YearlyReportController;
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsSuperAdmin;
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout-all', [AuthController::class, 'logoutAll'])->middleware('auth:sanctum');
+
+// Password Reset Routes
+Route::post('/forgot-password', [App\Http\Controllers\ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1');
+Route::post('/reset-password', [App\Http\Controllers\ForgotPasswordController::class, 'reset']);
 
 // Fortify will handle password reset routes automatically at:
 // POST /api/forgot-password
@@ -109,6 +115,8 @@ Route::middleware(['auth:sanctum', 'token.valid'])->group(function () {
     Route::get('meetings/statistics', [MeetingController::class, 'statistics']);
     Route::get('meetings/groups', [MeetingController::class, 'getGroups']);
     Route::get('meetings/trashed', [MeetingController::class, 'trashed']);
+    Route::post('meetings/bulk-restore', [MeetingController::class, 'bulkRestore']);
+    Route::post('meetings/bulk-force-delete', [MeetingController::class, 'bulkForceDelete']);
     Route::post('meetings/{id}/restore', [MeetingController::class, 'restore']);
     Route::delete('meetings/{id}/force', [MeetingController::class, 'forceDelete']);
     Route::apiResource('meetings', MeetingController::class);
@@ -159,6 +167,19 @@ Route::middleware(['auth:sanctum', 'token.valid'])->group(function () {
     Route::put('super-admins/{superAdmin}/block', [SuperAdminController::class, 'block'])->middleware(IsSuperAdmin::class);
     Route::put('super-admins/{superAdmin}/unblock', [SuperAdminController::class, 'unblock'])->middleware(IsSuperAdmin::class);
     Route::apiResource('super-admins', SuperAdminController::class)->middleware(IsSuperAdmin::class);
+
+    // Activities
+    Route::get('activities', [ActivityController::class, 'getActivities']);
+
+    // Import Excel - Admin Only
+    Route::middleware(IsAdmin::class)->group(function () {
+        Route::get('import/mentee-template', [ImportController::class, 'downloadMenteeTemplate']);
+        Route::post('import/mentees', [ImportController::class, 'importMentees']);
+        Route::get('import/mentor-template', [ImportController::class, 'downloadMentorTemplate']);
+        Route::post('import/mentors', [ImportController::class, 'importMentors']);
+        Route::get('import/group-template', [ImportController::class, 'downloadGroupTemplate']);
+        Route::post('import/groups', [ImportController::class, 'importGroups']);
+    });
 
     // ========================================================================
     // AWAL DARI BLOK KODE KEDUA YANG DIMASUKKAN

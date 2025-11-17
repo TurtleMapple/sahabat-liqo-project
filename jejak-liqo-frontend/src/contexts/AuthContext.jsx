@@ -27,22 +27,7 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: Checking auth', { hasToken: !!token, hasStoredUser: !!storedUser });
       
       if (!token) {
-        // Development: Auto-login as mentor for testing
-        const mockUser = {
-          id: 1,
-          email: 'mentor@jejakliqo.com',
-          role: 'mentor',
-          profile: {
-            full_name: 'Test Mentor',
-            gender: 'Ikhwan',
-            nickname: 'Mentor',
-            phone_number: '081234567890'
-          }
-        };
-        
-        localStorage.setItem('token', 'mock-token-123');
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
+        setUser(null);
         setLoading(false);
         return;
       }

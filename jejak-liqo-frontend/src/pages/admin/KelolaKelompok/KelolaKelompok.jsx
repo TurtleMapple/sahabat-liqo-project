@@ -10,7 +10,8 @@ import {
   Search, 
   Filter,
   X,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { UserIcon, UsersIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-hot-toast';
@@ -20,6 +21,8 @@ import GroupEditModal from '../../../components/admin/KelolaKelompok/GroupEditMo
 import GroupDeleteModal from '../../../components/admin/KelolaKelompok/GroupDeleteModal';
 import GroupsTable from '../../../components/admin/KelolaKelompok/GroupsTable';
 import CardTotalKelompok from '../../../components/admin/KelolaKelompok/CardTotalKelompok';
+import GroupImportModal from '../../../components/admin/KelolaKelompok/GroupImportModal';
+import { importGroups } from '../../../api/groupImport';
 
 const KelolaKelompok = () => {
   const { isDark } = useTheme();
@@ -31,12 +34,17 @@ const KelolaKelompok = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ group_type: '' });
+  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showMenteeModal, setShowMenteeModal] = useState(false);
   const [showCreateDropdown, setShowCreateDropdown] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importLoading, setImportLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [formData, setFormData] = useState({
     group_name: '',
@@ -58,6 +66,7 @@ const KelolaKelompok = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [groupDetail, setGroupDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   // Effects
   useEffect(() => {
@@ -252,6 +261,90 @@ const KelolaKelompok = () => {
     fetchGroupDetail(group.id);
   };
 
+
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImportFile(file);
+      setShowImportModal(true);
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    if (!importFile) return;
+
+    try {
+      setImportLoading(true);
+      const result = await importGroups(importFile);
+      
+      if (result.status === 'success') {
+        const failureCount = result.failures_count || 0;
+        
+        if (failureCount > 0) {
+          // Tampilkan setiap error dalam toast terpisah
+          result.failures.forEach(failure => {
+            failure.errors.forEach(error => {
+              toast.error(`Baris ${failure.row}: ${error}`, {
+                duration: 6000
+              });
+            });
+          });
+          
+          toast.success(`${result.message} (${failureCount} baris gagal)`);
+        } else {
+          toast.success(result.message);
+        }
+      } else {
+        toast.error(result.message);
+      }
+      
+      setShowImportModal(false);
+      setImportFile(null);
+      fetchGroups(currentPage);
+      fetchStats();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Gagal import data');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleImportCancel = () => {
+    setShowImportModal(false);
+    setImportFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSelectGroup = (groupId) => {
+    setSelectedGroups(prev => 
+      prev.includes(groupId)
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedGroups(prev => 
+      prev.length === groups.length ? [] : groups.map(g => g.id)
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedGroups.map(id => deleteGroup(id)));
+      toast.success(`${selectedGroups.length} kelompok berhasil dihapus`);
+      setShowBulkDeleteModal(false);
+      setSelectedGroups([]);
+      fetchGroups(currentPage);
+      fetchStats();
+    } catch (error) {
+      toast.error('Gagal menghapus beberapa kelompok');
+    }
+  };
+
   // Utility Functions
   const getGenderBadge = (genderDistribution) => {
     const ikhwanCount = genderDistribution?.ikhwan || 0;
@@ -303,7 +396,19 @@ const KelolaKelompok = () => {
             </p>
           </div>
           
-          <div className="flex space-x-3">
+          {selectedGroups.length > 0 && (
+            <div className="flex items-center space-x-3 mb-4 lg:mb-0">
+              <button
+                onClick={() => setShowBulkDeleteModal(true)}
+                className="flex items-center space-x-1 px-4 py-2 rounded-lg transition-colors whitespace-nowrap bg-red-500 text-white hover:bg-red-600"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-sm">Hapus ({selectedGroups.length})</span>
+              </button>
+            </div>
+          )}
+          
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate('/admin/kelola-kelompok/trashed')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
@@ -315,6 +420,27 @@ const KelolaKelompok = () => {
               <Trash2 size={20} />
               <span>Kelompok Terhapus</span>
             </button>
+            
+            <div className="relative">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                  isDark 
+                    ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                }`}
+              >
+                <Upload size={20} />
+                <span>Import Kelompok</span>
+              </button>
+            </div>
             
             <div className="relative create-dropdown">
               <button
@@ -477,15 +603,18 @@ const KelolaKelompok = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <GroupsTable
-          groups={groups}
-          loading={loading}
-          pagination={pagination}
-          getGenderBadge={getGenderBadge}
-          openDetailModal={openDetailModal}
-          setSelectedGroup={setSelectedGroup}
-          setShowMenteeModal={setShowMenteeModal}
-          setShowDeleteModal={setShowDeleteModal}
-          handlePageChange={handlePageChange}
+            groups={groups}
+            loading={loading}
+            pagination={pagination}
+            getGenderBadge={getGenderBadge}
+            openDetailModal={openDetailModal}
+            setSelectedGroup={setSelectedGroup}
+            setShowMenteeModal={setShowMenteeModal}
+            setShowDeleteModal={setShowDeleteModal}
+            handlePageChange={handlePageChange}
+            selectedGroups={selectedGroups}
+            onSelectGroup={handleSelectGroup}
+            onSelectAll={handleSelectAll}
           />
         </motion.div>
 
@@ -523,6 +652,66 @@ const KelolaKelompok = () => {
           group={selectedGroup}
           onUpdate={() => {fetchGroups(); fetchStats();}}
         />
+
+        <GroupImportModal
+          isOpen={showImportModal}
+          onClose={handleImportCancel}
+          onConfirm={handleImportConfirm}
+          fileName={importFile?.name}
+          loading={importLoading}
+        />
+
+        {/* Bulk Delete Modal */}
+        {showBulkDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`w-full max-w-md rounded-2xl shadow-xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}
+            >
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className={`p-3 rounded-full ${isDark ? 'bg-red-500/20' : 'bg-red-100'}`}>
+                    <Trash2 className={`w-6 h-6 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Hapus Kelompok
+                    </h3>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Hapus {selectedGroups.length} kelompok yang dipilih
+                    </p>
+                  </div>
+                </div>
+                
+                <div className={`p-4 rounded-xl mb-6 ${isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
+                  <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>
+                    Kelompok yang dihapus akan dipindahkan ke folder terhapus dan dapat dipulihkan kembali.
+                  </p>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowBulkDeleteModal(false)}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors ${
+                      isDark 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="flex-1 px-4 py-2 rounded-xl font-medium text-white bg-red-500 hover:bg-red-600 transition-colors"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </Layout>
   );

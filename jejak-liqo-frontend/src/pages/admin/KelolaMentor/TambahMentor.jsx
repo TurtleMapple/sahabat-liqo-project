@@ -98,6 +98,15 @@ const TambahMentor = () => {
     } catch (error) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
+        // Tampilkan error spesifik di toast
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        errorMessages.forEach(message => {
+          toast.error(message);
+        });
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
       } else {
         toast.error('Gagal menambahkan mentor');
       }
@@ -236,6 +245,13 @@ const TambahMentor = () => {
                           onChange={(e) => {
                             const file = e.target.files[0];
                             if (file) {
+                              // Validasi ukuran file (max 2MB)
+                              if (file.size > 2048 * 1024) {
+                                toast.error('Ukuran file tidak boleh lebih dari 2MB');
+                                e.target.value = '';
+                                return;
+                              }
+                              
                               setProfilePictureFile(file);
                               const reader = new FileReader();
                               reader.onload = (e) => {
@@ -252,7 +268,7 @@ const TambahMentor = () => {
                           } focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100`}
                         />
                         <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Pilih file gambar (JPG, PNG, GIF) atau kosongkan untuk menggunakan inisial nama
+                          Pilih file gambar (JPG, PNG, GIF) maksimal 2MB atau kosongkan untuk menggunakan inisial nama
                         </p>
                       </div>
                     </div>
@@ -331,7 +347,7 @@ const TambahMentor = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
                       <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                         Nomor Telepon
@@ -359,21 +375,6 @@ const TambahMentor = () => {
                           isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                         } focus:ring-2 focus:ring-blue-500`}
                       />
-                    </div>
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Status
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className={`w-full px-3 py-2 rounded-lg border ${
-                          isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                        } focus:ring-2 focus:ring-blue-500`}
-                      >
-                        <option value="Aktif">Aktif</option>
-                        <option value="Non-Aktif">Non-Aktif</option>
-                      </select>
                     </div>
                   </div>
 

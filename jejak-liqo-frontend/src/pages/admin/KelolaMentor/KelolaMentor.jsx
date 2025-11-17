@@ -13,7 +13,8 @@ import {
   Eye, 
   Filter,
   Mail,
-  Phone
+  Phone,
+  Upload
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import LoadingState from '../../../components/common/LoadingState';
@@ -21,6 +22,8 @@ import MentorStats from '../../../components/admin/KelolaMentor/MentorStats';
 import MentorDetailModal from '../../../components/admin/KelolaMentor/MentorDetailModal';
 import MentorDeleteModal from '../../../components/admin/KelolaMentor/MentorDeleteModal';
 import MentorBulkDeleteModal from '../../../components/admin/KelolaMentor/MentorBulkDeleteModal';
+import MentorImportModal from '../../../components/admin/KelolaMentor/MentorImportModal';
+import { importMentors } from '../../../api/mentorImport';
 
 const KelolaMentor = () => {
   const { isDark } = useTheme();
@@ -50,6 +53,10 @@ const KelolaMentor = () => {
     inactive_mentors: 0,
     mentors_by_gender: []
   });
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [blockingMentors, setBlockingMentors] = useState(new Set());
 
   useEffect(() => {
     fetchMentors(currentPage);
@@ -124,38 +131,48 @@ const KelolaMentor = () => {
   };
 
   const handleBlockMentor = async (mentor) => {
-    // Optimistic update
-    const updatedMentors = mentors.map(m => 
-      m.id === mentor.id ? { ...m, blocked_at: new Date().toISOString() } : m
-    );
-    setMentors(updatedMentors);
+    setBlockingMentors(prev => new Set(prev).add(mentor.id));
     
     try {
       await blockMentor(mentor.id);
+      // Optimistic update
+      const updatedMentors = mentors.map(m => 
+        m.id === mentor.id ? { ...m, blocked_at: new Date().toISOString() } : m
+      );
+      setMentors(updatedMentors);
       toast.success(`Mentor ${mentor.profile?.full_name || mentor.email} berhasil diblokir`);
-      fetchStats(); // Update card statistics
+      fetchStats();
     } catch (error) {
-      // Revert on error
-      setMentors(mentors);
       toast.error('Gagal memblokir mentor');
+    } finally {
+      setBlockingMentors(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(mentor.id);
+        return newSet;
+      });
     }
   };
 
   const handleUnblockMentor = async (mentor) => {
-    // Optimistic update
-    const updatedMentors = mentors.map(m => 
-      m.id === mentor.id ? { ...m, blocked_at: null } : m
-    );
-    setMentors(updatedMentors);
+    setBlockingMentors(prev => new Set(prev).add(mentor.id));
     
     try {
       await unblockMentor(mentor.id);
+      // Optimistic update
+      const updatedMentors = mentors.map(m => 
+        m.id === mentor.id ? { ...m, blocked_at: null } : m
+      );
+      setMentors(updatedMentors);
       toast.success(`Mentor ${mentor.profile?.full_name || mentor.email} berhasil dibuka blokirnya`);
-      fetchStats(); // Update card statistics
+      fetchStats();
     } catch (error) {
-      // Revert on error
-      setMentors(mentors);
       toast.error('Gagal membuka blokir mentor');
+    } finally {
+      setBlockingMentors(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(mentor.id);
+        return newSet;
+      });
     }
   };
 
@@ -197,6 +214,58 @@ const KelolaMentor = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'text/csv'];
+      if (validTypes.includes(file.type)) {
+        setUploadFile(file);
+        setShowImportModal(true);
+      } else {
+        toast.error('File harus berformat Excel (.xlsx, .xls) atau CSV');
+        e.target.value = '';
+      }
+    }
+  };
+
+  const handleImportExcel = async () => {
+    if (!uploadFile) return;
+    
+    try {
+      setImportLoading(true);
+      const result = await importMentors(uploadFile);
+      
+      if (result.status === 'success') {
+        const failureCount = result.failures_count || 0;
+        
+        if (failureCount > 0) {
+          // Tampilkan setiap error dalam toast terpisah
+          result.failures.forEach(failure => {
+            failure.errors.forEach(error => {
+              toast.error(`Baris ${failure.row}: ${error}`, {
+                duration: 6000
+              });
+            });
+          });
+          
+          toast.success(`${result.message} (${failureCount} baris gagal)`);
+        } else {
+          toast.success(result.message);
+        }
+        
+        setUploadFile(null);
+        setShowImportModal(false);
+        fetchMentors(currentPage);
+        fetchStats();
+        document.getElementById('excel-upload').value = '';
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Gagal import data mentor');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
 
 
   return (
@@ -228,6 +297,24 @@ const KelolaMentor = () => {
                 <span>Hapus ({selectedMentors.length})</span>
               </button>
             )}
+            <div className="relative">
+              <input
+                id="excel-upload"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => document.getElementById('excel-upload').click()}
+                className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg border ${
+                  isDark ? 'border-green-600 text-green-400 hover:bg-green-900/20' : 'border-green-300 text-green-700 hover:bg-green-50'
+                } transition-colors`}
+              >
+                <Upload size={20} />
+                <span>Import Excel</span>
+              </button>
+            </div>
             <button
               onClick={() => navigate('/admin/kelola-mentor/recycle-bin')}
               className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-lg border ${
@@ -340,7 +427,7 @@ const KelolaMentor = () => {
                     Status
                   </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                    Blokir
+                    Kontrol
                   </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Aksi
@@ -448,13 +535,19 @@ const KelolaMentor = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => mentor.blocked_at ? handleUnblockMentor(mentor) : handleBlockMentor(mentor)}
-                          className={`px-3 py-1 text-xs font-medium rounded-lg transition-all ${
-                            mentor.blocked_at
+                          disabled={blockingMentors.has(mentor.id)}
+                          className={`px-3 py-1 text-xs font-medium rounded-lg transition-all flex items-center space-x-1 ${
+                            blockingMentors.has(mentor.id)
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : mentor.blocked_at
                               ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                               : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                           }`}
                         >
-                          {mentor.blocked_at ? 'Unblock' : 'Block'}
+                          {blockingMentors.has(mentor.id) && (
+                            <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          )}
+                          <span>{mentor.blocked_at ? 'Unblock' : 'Block'}</span>
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -577,6 +670,19 @@ const KelolaMentor = () => {
         onClose={() => setShowBulkDeleteModal(false)}
         onConfirm={handleBulkDelete}
         selectedCount={selectedMentors.length}
+      />
+
+      {/* Import Mentor Modal */}
+      <MentorImportModal
+        isOpen={showImportModal}
+        onClose={() => {
+          setShowImportModal(false);
+          setUploadFile(null);
+          document.getElementById('excel-upload').value = '';
+        }}
+        onConfirm={handleImportExcel}
+        fileName={uploadFile?.name}
+        loading={importLoading}
       />
     </Layout>
   );

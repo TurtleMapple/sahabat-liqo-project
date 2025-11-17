@@ -13,7 +13,10 @@ const GroupsTable = ({
   setSelectedGroup, 
   setShowMenteeModal, 
   setShowDeleteModal,
-  handlePageChange 
+  handlePageChange,
+  selectedGroups = [],
+  onSelectGroup,
+  onSelectAll
 }) => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -24,6 +27,14 @@ const GroupsTable = ({
         <table className="w-full">
           <thead className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
             <tr>
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                <input
+                  type="checkbox"
+                  checked={selectedGroups.length === groups.length && groups.length > 0}
+                  onChange={onSelectAll}
+                  className="rounded"
+                />
+              </th>
               <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                 No
               </th>
@@ -50,13 +61,13 @@ const GroupsTable = ({
           <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
             {loading ? (
               <tr>
-                <td colSpan="7" className="px-6 py-4">
+                <td colSpan="8" className="px-6 py-4">
                   <LoadingState type="dots" size="md" text="Memuat data kelompok..." />
                 </td>
               </tr>
             ) : groups.length === 0 ? (
               <tr>
-                <td colSpan="7" className={`px-6 py-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <td colSpan="8" className={`px-6 py-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   Tidak ada data kelompok
                 </td>
               </tr>
@@ -64,8 +75,20 @@ const GroupsTable = ({
               groups.map((group, index) => (
                 <tr
                   key={group.id}
-                  className={`${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}
+                  className={`transition-colors ${
+                    selectedGroups.includes(group.id)
+                      ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
+                      : isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                  }`}
                 >
+                  <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedGroups.includes(group.id)}
+                      onChange={() => onSelectGroup(group.id)}
+                      className="rounded"
+                    />
+                  </td>
                   <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     {((pagination.current_page - 1) * pagination.per_page) + index + 1}
                   </td>
@@ -98,7 +121,19 @@ const GroupsTable = ({
                     </span>
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                    {getGenderBadge(group.gender_distribution)}
+                    {group.gender || group.mentor?.gender ? (
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        (group.gender || group.mentor?.gender) === 'Ikhwan' 
+                          ? isDark ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-100 text-blue-800'
+                          : isDark ? 'bg-pink-900/20 text-pink-400' : 'bg-pink-100 text-pink-800'
+                      }`}>
+                        {group.gender || group.mentor?.gender}
+                      </span>
+                    ) : (
+                      <span className={`px-2 py-1 text-xs rounded-full ${isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
+                        Tidak Diketahui
+                      </span>
+                    )}
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${

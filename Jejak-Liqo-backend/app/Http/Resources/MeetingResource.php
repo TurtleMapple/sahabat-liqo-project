@@ -27,6 +27,7 @@ class MeetingResource extends JsonResource
             'topic' => $this->topic,
             'notes' => $this->notes,
             'meeting_type' => $this->meeting_type,
+            'photos' => $this->photos,
             'attendances' => AttendanceResource::collection($this->whenLoaded('attendances')),
             'deleted_at' => $this->deleted_at,
             'created_at' => $this->created_at,

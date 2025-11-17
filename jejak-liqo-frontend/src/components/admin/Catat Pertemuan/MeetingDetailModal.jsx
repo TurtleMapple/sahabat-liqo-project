@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { 
@@ -11,11 +11,15 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  MagnifyingGlassPlusIcon
 } from '@heroicons/react/24/outline';
 
 const MeetingDetailModal = ({ isOpen, onClose, meeting }) => {
   const { isDark } = useTheme();
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+
 
   if (!isOpen || !meeting) return null;
 
@@ -189,6 +193,50 @@ const MeetingDetailModal = ({ isOpen, onClose, meeting }) => {
             </div>
           )}
 
+          {/* Photos Section */}
+          {meeting.photos && Array.isArray(meeting.photos) && meeting.photos.length > 0 && (
+            <div className={`p-4 rounded-xl mb-6 ${isDark ? 'bg-gray-700/30' : 'bg-gray-50'}`}>
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-xl">📷</span>
+                <h3 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Dokumentasi Pertemuan ({meeting.photos.length} foto)
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {meeting.photos.map((photoUrl, index) => {
+                  // Decode HTML entities
+                  const cleanUrl = photoUrl.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="relative group cursor-pointer"
+                      onClick={() => {
+
+                        setSelectedPhoto(cleanUrl);
+                      }}
+                    >
+                      <img
+                        src={cleanUrl}
+                        alt={`Dokumentasi ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg transition-transform group-hover:scale-105"
+                        onError={(e) => {
+                          console.error('Failed to load image:', cleanUrl);
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                      <div className={`absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-colors flex items-center justify-center pointer-events-none`}>
+                        <MagnifyingGlassPlusIcon className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+
+
           {/* Attendance Section */}
           {meeting.attendances && meeting.attendances.length > 0 && (
             <div className={`p-4 rounded-xl mb-6 ${isDark ? 'bg-gray-700/30' : 'bg-gray-50'}`}>
@@ -325,6 +373,41 @@ const MeetingDetailModal = ({ isOpen, onClose, meeting }) => {
           </button>
         </div>
       </motion.div>
+
+      {/* Photo Modal */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center p-2 sm:p-4" 
+          style={{ zIndex: 9999 }}
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="relative w-full h-full max-w-[95vw] max-h-[95vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedPhoto}
+              alt="Dokumentasi Pertemuan"
+              className="w-full h-full object-contain rounded-lg shadow-2xl"
+              style={{
+                maxWidth: '95vw',
+                maxHeight: '95vh',
+                width: 'auto',
+                height: 'auto'
+              }}
+            />
+            <button
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-2 right-2 p-2 sm:p-3 bg-black/60 text-white rounded-full hover:bg-black/80 transition-colors backdrop-blur-sm"
+            >
+              <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

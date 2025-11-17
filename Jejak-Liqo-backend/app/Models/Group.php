@@ -14,6 +14,7 @@ class Group extends Model
         'group_name',
         'description',
         'mentor_id',
+        'gender',
     ];
 
     protected $casts = [

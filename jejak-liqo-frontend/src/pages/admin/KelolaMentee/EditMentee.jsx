@@ -70,11 +70,28 @@ const EditMentee = () => {
 
   const fetchGroups = async () => {
     try {
-      const response = await getGroups();
-      setGroups(response.data.data || []);
+      const response = await api.get('/groups');
+      const groupsData = response.data.data || [];
+      
+      // Gender sudah tersedia dari GroupResource, fallback ke mentor gender jika perlu
+      const groupsWithGender = groupsData.map(group => {
+        let gender = group.gender || group.mentor?.gender;
+        return {
+          ...group,
+          gender: gender
+        };
+      });
+      
+      setGroups(groupsWithGender);
     } catch (error) {
       console.error('Error fetching groups:', error);
     }
+  };
+
+  // Filter groups based on mentee gender
+  const getFilteredGroups = () => {
+    if (!formData.gender) return groups;
+    return groups.filter(group => group.gender === formData.gender);
   };
 
   const validateMentee = (mentee) => {
@@ -242,7 +259,14 @@ const EditMentee = () => {
                     </label>
                     <select
                       value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                      onChange={(e) => {
+                        const newGender = e.target.value;
+                        setFormData({ 
+                          ...formData, 
+                          gender: newGender,
+                          group_id: newGender !== formData.gender ? null : formData.group_id
+                        });
+                      }}
                       className={`w-full px-3 py-2 rounded-lg border ${
                         isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                       } focus:ring-2 focus:ring-blue-500`}
@@ -355,12 +379,17 @@ const EditMentee = () => {
                       } focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">Tidak ada kelompok</option>
-                      {groups.map((group) => (
+                      {getFilteredGroups().map((group) => (
                         <option key={group.id} value={group.id}>
-                          {group.group_name}
+                          {group.group_name} - {group.mentor?.name || 'Tanpa Mentor'}
                         </option>
                       ))}
                     </select>
+                    {formData.gender && getFilteredGroups().length === 0 && (
+                      <p className={`text-sm mt-1 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                        ⚠️ Tidak ada kelompok {formData.gender} tersedia
+                      </p>
+                    )}
                     {formData.group_id !== originalGroupId && (
                       <p className={`text-sm mt-1 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
                         ⚠️ Perpindahan kelompok akan dicatat dalam history

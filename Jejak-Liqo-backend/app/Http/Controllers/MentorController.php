@@ -949,6 +949,14 @@ class MentorController extends Controller
     {
         try {
             $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User tidak ditemukan'
+                ], 404);
+            }
+            
             $user->load('profile');
             
             return response()->json([
@@ -1381,7 +1389,7 @@ class MentorController extends Controller
                 'location' => $meeting->place,
                 'type' => strtolower($meeting->meeting_type ?? 'offline'),
                 'created_at' => $meeting->created_at,
-                'photos' => is_string($meeting->photos) ? json_decode($meeting->photos, true) : (is_array($meeting->photos) ? $meeting->photos : []),
+                'photos' => $this->parsePhotos($meeting->photos),
                 'mentees' => $mentees,
                 'attendance' => [
                     'hadir' => $meeting->attendances->filter(function($att) { return strtolower($att->status) === 'hadir'; })->count(),
@@ -1552,8 +1560,8 @@ class MentorController extends Controller
             $photoUrls = [];
             
             // Delete removed photos from storage
-            $oldPhotos = is_string($meeting->photos) ? json_decode($meeting->photos, true) : (is_array($meeting->photos) ? $meeting->photos : []);
-            $existingPhotos = is_string($request->existing_photos) ? json_decode($request->existing_photos, true) : (is_array($request->existing_photos) ? $request->existing_photos : []);
+            $oldPhotos = $this->parsePhotos($meeting->photos);
+            $existingPhotos = $this->parsePhotos($request->existing_photos);
             
             if (is_array($oldPhotos) && is_array($existingPhotos)) {
                 $deletedPhotos = array_diff($oldPhotos, $existingPhotos);
@@ -1778,5 +1786,26 @@ class MentorController extends Controller
             'ikhwanCount' => $genderStats['Ikhwan'] ?? 0,
             'akhwatCount' => $genderStats['Akhwat'] ?? 0,
         ];
+    }
+
+    /**
+     * Helper method to safely parse photos data
+     */
+    private function parsePhotos($photos)
+    {
+        if (is_null($photos)) {
+            return [];
+        }
+        
+        if (is_array($photos)) {
+            return $photos;
+        }
+        
+        if (is_string($photos)) {
+            $decoded = json_decode($photos, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        
+        return [];
     }
 }

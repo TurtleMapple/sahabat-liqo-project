@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../../components/admin/Layout';
-import { ArrowLeft, RotateCcw, Trash2, Eye } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Trash2, Eye, Trash } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../../api/axiosInstance';
 import LoadingState from '../../../components/common/LoadingState';
@@ -16,7 +16,10 @@ const RecycleBinMentee = () => {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [selectedMentee, setSelectedMentee] = useState(null);
+  const [selectedMentees, setSelectedMentees] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     fetchDeletedMentees();
@@ -62,6 +65,39 @@ const RecycleBinMentee = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    try {
+      const menteesToDelete = selectedMentees.length > 0 ? selectedMentees : mentees.map(m => m.id);
+      await Promise.all(menteesToDelete.map(id => api.delete(`/mentees/${id}/force`)));
+      toast.success(`${menteesToDelete.length} mentee berhasil dihapus permanen`);
+      setShowDeleteAllModal(false);
+      setSelectedMentees([]);
+      setSelectAll(false);
+      fetchDeletedMentees();
+    } catch (error) {
+      console.error('Error deleting all mentees:', error);
+      toast.error('Gagal menghapus mentee secara permanen');
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectAll(checked);
+    if (checked) {
+      setSelectedMentees(mentees.map(m => m.id));
+    } else {
+      setSelectedMentees([]);
+    }
+  };
+
+  const handleSelectMentee = (menteeId, checked) => {
+    if (checked) {
+      setSelectedMentees([...selectedMentees, menteeId]);
+    } else {
+      setSelectedMentees(selectedMentees.filter(id => id !== menteeId));
+      setSelectAll(false);
+    }
+  };
+
   return (
     <Layout activeMenu="Kelola Mentee">
       <div className="p-6">
@@ -85,6 +121,22 @@ const RecycleBinMentee = () => {
               </p>
             </div>
           </div>
+          {mentees.length > 0 && (
+            <div className="flex items-center space-x-3">
+              {selectedMentees.length > 0 && (
+                <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {selectedMentees.length} dipilih
+                </span>
+              )}
+              <button
+                onClick={() => setShowDeleteAllModal(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash size={16} />
+                <span>{selectedMentees.length > 0 ? 'Hapus Terpilih' : 'Hapus Semua'}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Table */}
@@ -93,6 +145,14 @@ const RecycleBinMentee = () => {
             <table className="w-full">
               <thead className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
                 <tr>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     No
                   </th>
@@ -116,13 +176,13 @@ const RecycleBinMentee = () => {
               <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-4">
+                    <td colSpan="7" className="px-6 py-4">
                       <LoadingState type="dots" size="md" text="Memuat data recycle bin..." />
                     </td>
                   </tr>
                 ) : mentees.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className={`px-6 py-12 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <td colSpan="7" className={`px-6 py-12 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       <div className="flex flex-col items-center space-y-3">
                         <div className={`p-3 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
                           <Trash2 size={24} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
@@ -142,6 +202,14 @@ const RecycleBinMentee = () => {
                       animate={{ opacity: 1 }}
                       className={`hover:${isDark ? 'bg-gray-700' : 'bg-gray-50'} transition-colors`}
                     >
+                      <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedMentees.includes(mentee.id)}
+                          onChange={(e) => handleSelectMentee(mentee.id, e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
                       <td className={`px-6 py-4 whitespace-nowrap ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                         {index + 1}
                       </td>
@@ -334,6 +402,44 @@ const RecycleBinMentee = () => {
                 </button>
                 <button
                   onClick={handlePermanentDelete}
+                  className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Hapus Permanen
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete All Modal */}
+      {showDeleteAllModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`w-full max-w-md rounded-xl shadow-xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}
+          >
+            <div className="p-6">
+              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                Hapus Semua Mentee
+              </h3>
+              <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                {selectedMentees.length > 0 
+                  ? `Apakah Anda yakin ingin menghapus permanen ${selectedMentees.length} mentee yang dipilih?`
+                  : `Apakah Anda yakin ingin menghapus permanen semua ${mentees.length} mentee?`
+                }
+                <br /><span className="text-red-500">Tindakan ini tidak dapat dibatalkan!</span>
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowDeleteAllModal(false)}
+                  className={`flex-1 px-4 py-2 rounded-lg border ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} transition-colors`}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleDeleteAll}
                   className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
                   Hapus Permanen

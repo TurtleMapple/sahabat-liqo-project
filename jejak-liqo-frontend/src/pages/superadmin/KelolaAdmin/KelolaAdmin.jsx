@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Layout from '../../../components/superadmin/Layout';
 import { DeleteConfirmModal, EditAdminModal } from '../../../components/superadmin/modals';
+import AdminDetailModal from '../../../components/superadmin/AdminDetailModal';
 
 // Transform backend data to frontend format
 const transformAdminData = (backendAdmin) => {
@@ -58,146 +59,7 @@ const transformAdminData = (backendAdmin) => {
 
 
 
-// Detail Modal
-const DetailModal = ({ isOpen, onClose, admin }) => {
-  const { isDark } = useTheme();
-  if (!isOpen || !admin) return null;
 
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          onClick={(e) => e.stopPropagation()}
-          className={`rounded-2xl shadow-2xl w-full max-w-md ${
-            isDark ? 'bg-gray-800' : 'bg-white'
-          }`}
-        >
-          <div className={`p-6 border-b ${
-            isDark ? 'border-gray-700' : 'border-gray-200'
-          }`}>
-            <h3 className={`text-xl font-bold ${
-              isDark ? 'text-white' : 'text-gray-800'
-            }`}>Detail Admin</h3>
-          </div>
-
-          <div className="p-6 space-y-4">
-            <div className="flex items-center space-x-4">
-              {admin.foto_profil ? (
-                <img 
-                  src={admin.foto_profil} 
-                  alt={admin.nama_lengkap}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-gradient-to-br from-[#4DABFF] to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  {admin.nama_lengkap.split(' ').map(n => n[0]).join('')}
-                </div>
-              )}
-              <div>
-                <h4 className={`font-semibold ${
-                  isDark ? 'text-white' : 'text-gray-800'
-                }`}>{admin.nama_lengkap}</h4>
-                <p className={`text-sm ${
-                  isDark ? 'text-gray-400' : 'text-gray-500'
-                }`}>{admin.peran}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Mail size={18} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>{admin.email}</span>
-              </div>
-              
-              {admin.phone && (
-                <div className="flex items-center space-x-3">
-                  <Phone size={18} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>{admin.phone}</span>
-                </div>
-              )}
-              
-              {admin.alamat && (
-                <div className="flex items-center space-x-3">
-                  <MapPin size={18} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>{admin.alamat}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center space-x-3">
-                <Calendar size={18} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Bergabung: {admin.tanggal_bergabung}</span>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className={`w-3 h-3 rounded-full ${
-                  admin.status === 'Aktif' 
-                    ? 'bg-green-500' 
-                    : admin.status === 'Terblokir'
-                    ? 'bg-red-500'
-                    : 'bg-yellow-500'
-                }`} />
-                <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Status: {admin.status}</span>
-              </div>
-              
-              {admin.blocked_at && (
-                <div className="flex items-center space-x-3">
-                  <AlertCircle size={18} className="text-red-500" />
-                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>
-                    Diblokir: {new Date(admin.blocked_at).toLocaleDateString('id-ID', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-                </div>
-              )}
-              
-              {admin.job && (
-                <div className="flex items-center space-x-3">
-                  <Users size={18} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Pekerjaan: {admin.job}</span>
-                </div>
-              )}
-              
-              {admin.nickname && (
-                <div className="flex items-center space-x-3">
-                  <Users size={18} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Nickname: {admin.nickname}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className={`p-6 border-t ${
-            isDark ? 'border-gray-700' : 'border-gray-200'
-          }`}>
-            <button
-              onClick={onClose}
-              className={`w-full px-4 py-2 rounded-lg transition-colors ${
-                isDark 
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Tutup
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-};
 
 
 
@@ -210,6 +72,7 @@ const KelolaAdmin = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
+  const [genderFilter, setGenderFilter] = useState('Semua');
   const [sortBy, setSortBy] = useState('nama_lengkap');
   const [sortOrder, setSortOrder] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -221,6 +84,7 @@ const KelolaAdmin = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [actionType, setActionType] = useState('');
+  const [blockingAdmins, setBlockingAdmins] = useState(new Set());
   const { isDark } = useTheme();
 
 
@@ -257,7 +121,8 @@ const KelolaAdmin = () => {
       const matchesSearch = admin.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            admin.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'Semua' || admin.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesGender = genderFilter === 'Semua' || admin.gender === genderFilter;
+      return matchesSearch && matchesStatus && matchesGender;
     });
 
     // Sort
@@ -272,7 +137,7 @@ const KelolaAdmin = () => {
     });
 
     setFilteredAdmins(filtered);
-  }, [admins, searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [admins, searchTerm, statusFilter, genderFilter, sortBy, sortOrder]);
 
   // Fetch data on component mount and page change
   useEffect(() => {
@@ -382,26 +247,53 @@ const KelolaAdmin = () => {
       console.error('Failed to delete admin:', error);
       toast.error(error.response?.data?.message || 'Gagal menghapus admin');
     } finally {
-      setShowFormModal(false);
+      setShowConfirmModal(false);
       setSelectedAdmin(null);
+      setActionType('');
     }
   };
 
   const handleToggleStatus = async (admin) => {
     try {
+      setBlockingAdmins(prev => new Set(prev).add(admin.id));
+      
+      // Update UI immediately
+      const newStatus = admin.status === 'Aktif' ? 'Terblokir' : 'Aktif';
+      setAdmins(prevAdmins => 
+        prevAdmins.map(a => 
+          a.id === admin.id ? { ...a, status: newStatus } : a
+        )
+      );
+      
       const endpoint = admin.status === 'Aktif' ? 'block' : 'unblock';
       const response = await api.put(`/admins/${admin.id}/${endpoint}`);
       
       if (response.data.status === 'success') {
-        const newStatus = admin.status === 'Aktif' ? 'Terblokir' : 'Aktif';
         toast.success(`Admin berhasil ${admin.status === 'Aktif' ? 'diblokir' : 'dibuka blokirnya'}`);
-        fetchAdmins();
       } else {
+        // Revert on error
+        setAdmins(prevAdmins => 
+          prevAdmins.map(a => 
+            a.id === admin.id ? { ...a, status: admin.status } : a
+          )
+        );
         throw new Error(response.data.message || 'Failed to toggle status');
       }
     } catch (error) {
       console.error('Failed to toggle admin status:', error);
       toast.error(error.response?.data?.message || 'Gagal mengubah status admin');
+      // Revert on error
+      setAdmins(prevAdmins => 
+        prevAdmins.map(a => 
+          a.id === admin.id ? { ...a, status: admin.status } : a
+        )
+      );
+    } finally {
+      setBlockingAdmins(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(admin.id);
+        return newSet;
+      });
     }
   };
 
@@ -410,10 +302,38 @@ const KelolaAdmin = () => {
       <div className="p-4 md:p-6 lg:p-8">
           {/* Page Header */}
           <div className="mb-6">
-            <h1 className={`text-3xl font-bold mb-2 ${
-              isDark ? 'text-white' : 'text-gray-800'
-            }`}>Kelola Admin</h1>
-            <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Kelola data admin sistem Shaf Pembangunan</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className={`text-3xl font-bold mb-2 ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>Kelola Admin</h1>
+                <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Kelola data admin sistem Shaf Pembangunan</p>
+              </div>
+              
+              <div className="flex gap-3">
+                <Link to="/superadmin/add-admin">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 bg-gradient-to-r from-[#4DABFF] to-blue-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2"
+                  >
+                    <Plus size={20} />
+                    <span>Tambah Admin</span>
+                  </motion.button>
+                </Link>
+                
+                <Link to="/superadmin/recycle-bin">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2"
+                  >
+                    <Trash2 size={20} />
+                    <span>Recycle Bin</span>
+                  </motion.button>
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Controls */}
@@ -458,6 +378,21 @@ const KelolaAdmin = () => {
                   <option value="Terblokir">Terblokir</option>
                 </select>
 
+                {/* Gender Filter */}
+                <select
+                  value={genderFilter}
+                  onChange={(e) => setGenderFilter(e.target.value)}
+                  className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                >
+                  <option value="Semua">Semua Gender</option>
+                  <option value="Ikhwan">Ikhwan</option>
+                  <option value="Akhwat">Akhwat</option>
+                </select>
+
                 {/* Sort */}
                 <select
                   value={`${sortBy}-${sortOrder}`}
@@ -480,29 +415,7 @@ const KelolaAdmin = () => {
                   <option value="tanggal_bergabung-asc">Terlama</option>
                 </select>
 
-                {/* Add Button */}
-                <Link to="/superadmin/add-admin">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 bg-gradient-to-r from-[#4DABFF] to-blue-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2"
-                  >
-                    <Plus size={20} />
-                    <span>Tambah Admin</span>
-                  </motion.button>
-                </Link>
-                
-                {/* Recycle Bin Button */}
-                <Link to="/superadmin/recycle-bin">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2"
-                  >
-                    <Trash2 size={20} />
-                    <span>Recycle Bin</span>
-                  </motion.button>
-                </Link>
+
               </div>
             </div>
           </div>
@@ -515,7 +428,11 @@ const KelolaAdmin = () => {
           }`}>
             {loading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4DABFF] mx-auto mb-4"></div>
+                <div className="flex items-center justify-center space-x-1 mb-4">
+                  <div className="w-2 h-2 bg-[#4DABFF] rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-[#4DABFF] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-[#4DABFF] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
                 <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Memuat data admin...</p>
               </div>
             ) : (
@@ -532,6 +449,9 @@ const KelolaAdmin = () => {
                     <th className={`px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
                       isDark ? 'text-gray-300' : 'text-gray-600'
                     }`}>Email</th>
+                    <th className={`px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Gender</th>
                     <th className={`px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider ${
                       isDark ? 'text-gray-300' : 'text-gray-600'
                     }`}>Status</th>
@@ -598,6 +518,19 @@ const KelolaAdmin = () => {
                       }`}>
                         <div className="truncate max-w-xs" title={admin.email}>{admin.email}</div>
                       </td>
+                      <td className={`px-4 py-3 text-sm ${
+                        isDark ? 'text-gray-300' : 'text-gray-900'
+                      }`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
+                          admin.gender === 'Ikhwan'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : admin.gender === 'Akhwat'
+                            ? 'bg-pink-100 text-pink-800 border border-pink-200'
+                            : 'bg-gray-100 text-gray-800 border border-gray-200'
+                        }`}>
+                          {admin.gender || 'Tidak diset'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
                           admin.status === 'Aktif'
@@ -619,13 +552,16 @@ const KelolaAdmin = () => {
                       <td className="px-4 py-3">
                         <button
                           onClick={() => handleToggleStatus(admin)}
-                          className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                          disabled={blockingAdmins.has(admin.id)}
+                          className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 disabled:opacity-50 ${
                             admin.status === 'Aktif'
                               ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                               : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                           }`}
                         >
-                          {admin.status === 'Aktif' ? (
+                          {blockingAdmins.has(admin.id) ? (
+                            <><div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1"></div>Loading</>
+                          ) : admin.status === 'Aktif' ? (
                             <><EyeOff size={12} className="mr-1" />Block</>
                           ) : (
                             <><Eye size={12} className="mr-1" />Unblock</>
@@ -650,10 +586,7 @@ const KelolaAdmin = () => {
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                              setSelectedAdmin(admin);
-                              setShowFormModal(true);
-                            }}
+                            onClick={() => navigate(`/superadmin/kelola-admin/edit/${admin.id}`)}
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200 border border-green-200 hover:border-green-300"
                             title="Edit Admin"
                           >
@@ -693,7 +626,11 @@ const KelolaAdmin = () => {
                   ? 'bg-gray-800 border-gray-700' 
                   : 'bg-white border-gray-100'
               }`}>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4DABFF] mx-auto mb-4"></div>
+                <div className="flex items-center justify-center space-x-1 mb-4">
+                  <div className="w-2 h-2 bg-[#4DABFF] rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-[#4DABFF] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-[#4DABFF] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
                 <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Memuat data admin...</p>
               </div>
             ) : (
@@ -762,13 +699,16 @@ const KelolaAdmin = () => {
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                       <button
                         onClick={() => handleToggleStatus(admin)}
-                        className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                        disabled={blockingAdmins.has(admin.id)}
+                        className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-50 ${
                           admin.status === 'Aktif'
                             ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                             : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                         }`}
                       >
-                        {admin.status === 'Aktif' ? (
+                        {blockingAdmins.has(admin.id) ? (
+                          <><div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1"></div>Loading</>
+                        ) : admin.status === 'Aktif' ? (
                           <><EyeOff size={12} className="mr-1" />Block</>
                         ) : (
                           <><Eye size={12} className="mr-1" />Unblock</>
@@ -824,7 +764,7 @@ const KelolaAdmin = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {totalItems > 0 && (
             <div className={`rounded-2xl shadow-md border p-4 mt-4 ${
               isDark 
                 ? 'bg-gray-800 border-gray-700' 
@@ -897,7 +837,7 @@ const KelolaAdmin = () => {
           )}
 
           {/* Empty State */}
-          {filteredAdmins.length === 0 && (
+          {filteredAdmins.length === 0 && !loading && (
             <div className={`rounded-2xl shadow-md p-12 text-center border ${
               isDark 
                 ? 'bg-gray-800 border-gray-700' 
@@ -906,21 +846,18 @@ const KelolaAdmin = () => {
               <Users size={48} className={`mx-auto mb-4 ${
                 isDark ? 'text-gray-500' : 'text-gray-400'
               }`} />
-              <h3 className={`text-lg font-semibold mb-2 ${
-                isDark ? 'text-gray-300' : 'text-gray-600'
-              }`}>Tidak ada admin ditemukan</h3>
               <p className={`mb-4 ${
                 isDark ? 'text-gray-400' : 'text-gray-500'
               }`}>
                 {searchTerm || statusFilter !== 'Semua' 
                   ? 'Coba ubah filter atau kata kunci pencarian'
-                  : 'Belum ada admin yang terdaftar dalam sistem'
+                  : 'Belum ada data admin'
                 }
               </p>
               {!searchTerm && statusFilter === 'Semua' && (
                 <Link to="/superadmin/add-admin">
                   <button className="px-6 py-2 bg-gradient-to-r from-[#4DABFF] to-blue-600 text-white rounded-lg hover:shadow-lg transition-all">
-                    Tambah Admin Pertama
+                    Tambah Admin
                   </button>
                 </Link>
               )}
@@ -939,7 +876,7 @@ const KelolaAdmin = () => {
         onSave={handleEditAdmin}
       />
 
-      <DetailModal
+      <AdminDetailModal
         isOpen={showDetailModal}
         onClose={() => {
           setShowDetailModal(false);

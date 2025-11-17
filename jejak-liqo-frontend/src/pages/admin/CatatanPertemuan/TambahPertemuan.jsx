@@ -36,6 +36,8 @@ const TambahPertemuan = () => {
     meeting_type: 'Offline'
   });
   const [attendances, setAttendances] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [photoFiles, setPhotoFiles] = useState([]);
 
   useEffect(() => {
     fetchGroups();
@@ -107,14 +109,18 @@ const TambahPertemuan = () => {
       
       setSelectedGroupMentees(mentees);
       
-      // Initialize attendance with default 'Hadir' status
-      const initialAttendances = mentees.map(mentee => ({
-        mentee_id: mentee.id,
-        mentee_name: mentee.full_name,
-        status: 'Hadir',
-        notes: ''
-      }));
-      setAttendances(initialAttendances);
+      if (mentees.length > 0) {
+        // Initialize attendance with default 'Hadir' status
+        const initialAttendances = mentees.map(mentee => ({
+          mentee_id: mentee.id,
+          mentee_name: mentee.full_name,
+          status: 'Hadir',
+          notes: ''
+        }));
+        setAttendances(initialAttendances);
+      } else {
+        setAttendances([]);
+      }
     } catch (error) {
       console.error('Error fetching group mentees:', error);
       toast.error('Gagal memuat data mentee kelompok');
@@ -181,6 +187,38 @@ const TambahPertemuan = () => {
     return colors[status] || colors['Hadir'];
   };
 
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files);
+    
+    const validFiles = files.filter(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File ${file.name} terlalu besar (max 10MB)`);
+        return false;
+      }
+      return true;
+    });
+    
+    setPhotoFiles(prev => [...prev, ...validFiles]);
+    
+    // Create preview URLs
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotos(prev => [...prev, {
+          file,
+          preview: e.target.result,
+          name: file.name
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -192,24 +230,54 @@ const TambahPertemuan = () => {
     try {
       setLoading(true);
       
-      // Prepare meeting data with attendances
-      const meetingData = {
-        ...formData,
-        attendances: attendances.map(attendance => ({
-          mentee_id: attendance.mentee_id,
-          status: attendance.status,
-          notes: attendance.notes || null
-        }))
-      };
+      // Prepare FormData for file upload
+      const formDataToSend = new FormData();
       
-      // Create meeting with attendances
-      await meetingsAPI.createMeeting(meetingData);
+      // Append basic meeting data
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
+      });
+      
+      // Append attendances as array
+      if (attendances.length > 0) {
+        attendances.forEach((attendance, index) => {
+          formDataToSend.append(`attendances[${index}][mentee_id]`, attendance.mentee_id);
+          formDataToSend.append(`attendances[${index}][status]`, attendance.status);
+          if (attendance.notes) {
+            formDataToSend.append(`attendances[${index}][notes]`, attendance.notes);
+          }
+        });
+      }
+      
+      // Append photos
+      if (photoFiles.length > 0) {
+        photoFiles.forEach((file) => {
+          if (file instanceof File) {
+            formDataToSend.append('photos[]', file, file.name);
+          }
+        });
+      }
+      
+      // Create meeting - jangan set Content-Type manual
+      await meetingsAPI.createMeeting(formDataToSend);
       
       toast.success('Pertemuan berhasil dibuat');
       navigate('/admin/catatan-pertemuan');
     } catch (error) {
       console.error('Error creating meeting:', error);
-      toast.error(error.response?.data?.message || 'Gagal membuat pertemuan');
+      console.error('Error response:', error.response?.data);
+      
+      // Tampilkan error validasi yang spesifik
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        Object.keys(errors).forEach(field => {
+          errors[field].forEach(message => {
+            toast.error(`${field}: ${message}`);
+          });
+        });
+      } else {
+        toast.error(error.response?.data?.message || 'Gagal membuat pertemuan');
+      }
     } finally {
       setLoading(false);
     }
@@ -424,8 +492,83 @@ const TambahPertemuan = () => {
                   } focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20`}
                 />
               </div>
+
+              {/* Photo Upload */}
+              <div className="md:col-span-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  📷 Dokumentasi Pertemuan
+                </label>
+                <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
+                  isDark 
+                    ? 'border-gray-600 hover:border-gray-500' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    id="photo-upload"
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className={`cursor-pointer inline-flex flex-col items-center ${
+                      isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
+                    }`}
+                  >
+                    <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span className="text-sm font-medium">Upload Foto Dokumentasi</span>
+                    <span className="text-xs mt-1">PNG, JPG, GIF hingga 10MB</span>
+                  </label>
+                </div>
+                
+                {/* Photo Preview */}
+                {photos.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo.preview}
+                          alt={photo.name}
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
+
+          {/* Empty Group Card */}
+          {formData.group_id && selectedGroupMentees.length === 0 && (
+            <motion.div 
+              className={`p-6 rounded-2xl ${isDark ? 'bg-yellow-900/20 border border-yellow-700' : 'bg-yellow-50 border border-yellow-200'} shadow-sm`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="text-center py-8">
+                <UserGroupIcon className={`w-16 h-16 mx-auto mb-4 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                  Kelompok Belum Memiliki Mentee
+                </h3>
+                <p className={`${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>
+                  Kelompok yang dipilih belum memiliki mentee. Anda masih bisa membuat pertemuan, namun tidak ada daftar kehadiran yang dapat dicatat.
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           {/* Attendance Card */}
           {formData.group_id && attendances.length > 0 && (

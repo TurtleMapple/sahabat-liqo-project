@@ -36,6 +36,7 @@ import SuperAdminDashboard from "./pages/superadmin/Dashboard";
 import KelolaAdmin from "./pages/superadmin/KelolaAdmin/KelolaAdmin";
 import KelolaSuperAdmin from "./pages/superadmin/KelolaSuperAdmin/KelolaSuperAdmin";
 import AddAdmin from "./pages/superadmin/KelolaAdmin/AddAdmin";
+import EditAdmin from "./pages/superadmin/KelolaAdmin/EditAdmin";
 import RecycleBin from "./pages/superadmin/KelolaAdmin/RecycleBin";
 import Pengumuman from "./pages/superadmin/Pengumuman";
 import MentorDashboard from "./pages/mentor/Dashboard";
@@ -50,9 +51,12 @@ import MentorTambahPertemuan from "./pages/mentor/KelolaPertemuan/TambahPertemua
 import MentorEditPertemuan from "./pages/mentor/KelolaPertemuan/EditPertemuan";
 import MentorPengumuman from "./pages/mentor/Pengumuman/Pengumuman";
 import Settings from "./pages/mentor/ProfileMentor/Settings";
+import SuperAdminSettings from "./pages/superadmin/Settings";
+import SuperAdminAktivitas from "./pages/superadmin/Aktivitas";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import TokenExpirationProvider from "./components/TokenExpirationProvider";
+import RoleGuard from "./components/RoleGuard";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -97,7 +101,8 @@ function App() {
         />
         <Router>
           <TokenExpirationProvider>
-            <Routes>
+            <RoleGuard>
+              <Routes>
         {/* Redirect root */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -380,6 +385,15 @@ function App() {
         />
 
         <Route
+          path="/superadmin/kelola-admin/edit/:id"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <EditAdmin />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/superadmin/recycle-bin"
           element={
             <ProtectedRoute allowedRoles={["super_admin"]}>
@@ -397,15 +411,34 @@ function App() {
           }
         />
 
+        <Route
+          path="/superadmin/settings"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <SuperAdminSettings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/superadmin/aktivitas"
+          element={
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <SuperAdminAktivitas />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Mentor Routes */}
         <Route
-          path="/mentor"
+          path="/mentor/*"
           element={
             <ProtectedRoute allowedRoles={["mentor"]}>
               <MentorLayout />
             </ProtectedRoute>
           }
         >
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<MentorDashboard />} />
           <Route path="kelompok/:id" element={<MentorKelolaKelompok />} />
           <Route path="kelompok/:id/kelola-mentee" element={<MentorTambahMentee />} />
@@ -418,9 +451,15 @@ function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
 
-        {/* Fallback */}
+        {/* Role-based redirects */}
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/superadmin" element={<Navigate to="/superadmin/dashboard" replace />} />
+        <Route path="/mentor" element={<Navigate to="/mentor/dashboard" replace />} />
+
+        {/* Fallback - redirect to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
+              </Routes>
+            </RoleGuard>
           </TokenExpirationProvider>
         </Router>
       </AuthProvider>

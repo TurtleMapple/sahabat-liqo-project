@@ -8,6 +8,7 @@ import {
   Users, 
   UserCog, 
   Megaphone,
+  Activity,
   ChevronRight
 } from 'lucide-react';
 
@@ -15,11 +16,27 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' 
   const navigate = useNavigate();
   const { isDark } = useTheme();
   
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', active: activeMenu === 'Dashboard', path: '/superadmin/dashboard' },
-    { icon: Users, label: 'Kelola Admin', active: activeMenu === 'Kelola Admin', path: '/superadmin/kelola-admin' },
-    { icon: UserCog, label: 'Kelola Super Admin', active: activeMenu === 'Kelola Super Admin', path: '/superadmin/kelola-superadmin' },
-    { icon: Megaphone, label: 'Pengumuman', active: activeMenu === 'Pengumuman', path: '/superadmin/pengumuman' }
+  const menuSections = [
+    {
+      title: 'Menu Utama',
+      items: [
+        { icon: LayoutDashboard, label: 'Dashboard', active: activeMenu === 'Dashboard', path: '/superadmin/dashboard' }
+      ]
+    },
+    {
+      title: 'Manajemen',
+      items: [
+        { icon: Users, label: 'Kelola Admin', active: activeMenu === 'Kelola Admin', path: '/superadmin/kelola-admin' },
+        { icon: UserCog, label: 'Kelola Super Admin', active: activeMenu === 'Kelola Super Admin', path: '/superadmin/kelola-superadmin' }
+      ]
+    },
+    {
+      title: 'Lainnya',
+      items: [
+        { icon: Megaphone, label: 'Pengumuman', active: activeMenu === 'Pengumuman', path: '/superadmin/pengumuman' },
+        { icon: Activity, label: 'Aktivitas', active: activeMenu === 'Aktivitas', path: '/superadmin/aktivitas' }
+      ]
+    }
   ];
 
   return (
@@ -38,32 +55,35 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' 
       </AnimatePresence>
 
       {/* Sidebar */}
-      <AnimatePresence>
-        {(!isCollapsed || window.innerWidth < 1024) && (
+      <AnimatePresence mode="wait">
+        {(!isCollapsed || isOpen) && (
           <motion.aside
+            key="sidebar"
             initial={false}
             animate={{ 
-              x: window.innerWidth >= 1024 ? 0 : (isOpen ? 0 : -300)
+              x: window.innerWidth >= 1024 ? 0 : (isOpen ? 0 : -300),
+              opacity: 1
             }}
-            exit={{ x: -300 }}
+            exit={{ x: -300, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={`fixed left-0 top-0 h-screen w-72 shadow-2xl z-50 lg:z-auto transition-colors duration-300 ${
               isDark ? 'bg-gray-900' : 'bg-white'
             }`}
           >
             <div className="flex flex-col h-full">
               {/* Logo */}
-              <div className={`p-4 transition-colors duration-300 ${
+              <div className={`px-6 py-6 transition-colors duration-300 ${
                 isDark ? 'border-b border-gray-700' : 'border-b border-gray-200'
               }`}>
                 <div className="flex items-center justify-between">
-                  <div className={`flex items-center space-x-3 ${isCollapsed ? 'justify-center' : ''}`}>
-                    {!isCollapsed && (
+                  <div className={`flex items-center space-x-3 ${isCollapsed && window.innerWidth >= 1024 ? 'justify-center' : ''}`}>
+                    {(!isCollapsed || window.innerWidth < 1024) && (
                       <div>
                         <h2 className={`font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>Super Admin</h2>
                         <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Dashboard</p>
                       </div>
                     )}
-                    {isCollapsed && (
+                    {isCollapsed && window.innerWidth >= 1024 && (
                       <div className="w-8 h-8 bg-gradient-to-br from-[#4DABFF] to-blue-600 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-sm">SA</span>
                       </div>
@@ -81,55 +101,55 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar, activeMenu = 'Dashboard' 
               </div>
 
               {/* Menu Items */}
-              <nav className="flex-1 p-4 space-y-2">
-                {menuItems.map((item, index) => (
-                  <motion.button
-                    key={index}
-                    whileHover={{ scale: 1.02, x: isCollapsed ? 0 : 4 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      if (item.path !== '#') {
-                        navigate(item.path);
-                      }
-                    }}
-                    className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3 px-4'} py-3 rounded-xl transition-all ${
-                      item.active
-                        ? 'bg-gradient-to-r from-[#4DABFF] to-blue-500 text-white shadow-lg shadow-blue-500/30'
-                        : isDark 
-                          ? 'text-gray-300 hover:bg-gray-800' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                    title={isCollapsed ? item.label : ''}
-                  >
-                    <item.icon size={20} />
-                    {!isCollapsed && (
-                      <>
-                        <span className="font-medium">{item.label}</span>
-                        {item.active && <ChevronRight className="ml-auto" size={18} />}
-                      </>
+              <nav className="flex-1 p-4">
+                {menuSections.map((section, sectionIndex) => (
+                  <div key={sectionIndex} className="mb-6">
+                    {(!isCollapsed || window.innerWidth < 1024) && (
+                      <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 px-2 ${
+                        isDark ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
+                        {section.title}
+                      </h3>
                     )}
-                  </motion.button>
+                    <div className="space-y-1">
+                      {section.items.map((item, index) => (
+                        <motion.button
+                          key={index}
+                          whileHover={{ scale: 1.02, x: isCollapsed ? 0 : 4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            if (item.path !== '#') {
+                              navigate(item.path);
+                              // Auto close mobile sidebar after navigation
+                              if (window.innerWidth < 1024) {
+                                toggleSidebar();
+                              }
+                            }
+                          }}
+                          className={`w-full flex items-center ${isCollapsed && window.innerWidth >= 1024 ? 'justify-center px-2' : 'space-x-3 px-4'} py-3 rounded-xl transition-all ${
+                            item.active
+                              ? 'bg-gradient-to-r from-[#4DABFF] to-blue-500 text-white shadow-lg shadow-blue-500/30'
+                              : isDark 
+                                ? 'text-gray-300 hover:bg-gray-800' 
+                                : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                          title={isCollapsed && window.innerWidth >= 1024 ? item.label : ''}
+                        >
+                          <item.icon size={20} />
+                          {(!isCollapsed || window.innerWidth < 1024) && (
+                            <>
+                              <span className="font-medium">{item.label}</span>
+                              {item.active && <ChevronRight className="ml-auto" size={18} />}
+                            </>
+                          )}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </nav>
 
-              {/* User Profile */}
-              <div className={`p-4 transition-colors duration-300 ${
-                isDark ? 'border-t border-gray-700' : 'border-t border-gray-200'
-              }`}>
-                <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl ${
-                  isDark ? 'bg-gray-800' : 'bg-gray-50'
-                }`}>
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    SA
-                  </div>
-                  {!isCollapsed && (
-                    <div className="flex-1">
-                      <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-800'}`}>Super Admin</p>
-                      <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>admin@jejakliqo.com</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+
             </div>
           </motion.aside>
         )}

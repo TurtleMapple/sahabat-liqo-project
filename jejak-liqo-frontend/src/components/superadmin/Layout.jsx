@@ -11,6 +11,7 @@ const Layout = ({ children, activeMenu = 'Dashboard' }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -40,6 +41,8 @@ const Layout = ({ children, activeMenu = 'Dashboard' }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -52,17 +55,24 @@ const Layout = ({ children, activeMenu = 'Dashboard' }) => {
   };
 
   return (
-    <div className={`flex min-h-screen transition-colors duration-300 ${
+    <div className={`min-h-screen transition-colors duration-300 ${
       isDark 
         ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
         : 'bg-gradient-to-br from-[#4DABFF]/10 via-white to-[#4DABFF]/5'
     }`}>
-      <Sidebar isOpen={sidebarOpen} isCollapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} activeMenu={activeMenu} />
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        isCollapsed={sidebarCollapsed} 
+        toggleSidebar={toggleSidebar} 
+        activeMenu={activeMenu}
+      />
       
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'ml-0' : 'lg:ml-72'}`}>
+      <div className={`transition-all duration-300 ${
+        sidebarCollapsed ? 'ml-0' : 'lg:ml-72'
+      }`}>
         <Header toggleSidebar={toggleSidebar} onLogoutClick={() => setShowLogoutModal(true)} />
         
-        <main className="flex-1">
+        <main>
           {children}
         </main>
       </div>

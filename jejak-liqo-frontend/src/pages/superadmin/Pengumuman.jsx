@@ -275,7 +275,7 @@ const Pengumuman = () => {
                   placeholder="Cari judul atau konten pengumuman..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
                     isDark 
                       ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -292,7 +292,7 @@ const Pengumuman = () => {
                     setSortBy(field);
                     setSortOrder(order);
                   }}
-                  className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
+                  className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4DABFF] focus:border-transparent ${
                     isDark 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -308,14 +308,14 @@ const Pengumuman = () => {
           </div>
 
           {/* Announcement Cards */}
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {loading ? (
-              <div className={`rounded-2xl shadow-md p-8 text-center border ${
+              <div className={`col-span-full rounded-2xl shadow-md p-8 text-center border ${
                 isDark 
                   ? 'bg-gray-800 border-gray-700' 
                   : 'bg-white border-gray-100'
               }`}>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4DABFF] mx-auto mb-4"></div>
                 <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Memuat data pengumuman...</p>
               </div>
             ) : (
@@ -328,8 +328,8 @@ const Pengumuman = () => {
                   whileHover={{ y: -5, scale: 1.02 }}
                   className={`rounded-2xl shadow-lg border p-6 cursor-pointer transition-all duration-300 ${
                     isDark 
-                      ? 'bg-gray-800 border-gray-700 hover:shadow-2xl hover:border-orange-500/50' 
-                      : 'bg-white border-gray-100 hover:shadow-2xl hover:border-orange-300'
+                      ? 'bg-gray-800 border-gray-700 hover:shadow-2xl hover:border-[#4DABFF]/50' 
+                      : 'bg-white border-gray-100 hover:shadow-2xl hover:border-[#4DABFF]/30'
                   }`}
                   onClick={() => {
                     setSelectedAnnouncement(announcement);
@@ -347,7 +347,7 @@ const Pengumuman = () => {
                         <div className={`flex items-center space-x-2 ${
                           isDark ? 'text-gray-400' : 'text-gray-500'
                         }`}>
-                          <User size={16} className="text-orange-500" />
+                          <User size={16} className="text-[#4DABFF]" />
                           <span>{announcement.author}</span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${
                             announcement.author_role === 'admin' 
@@ -361,14 +361,14 @@ const Pengumuman = () => {
                         <div className={`flex items-center space-x-2 ${
                           isDark ? 'text-gray-400' : 'text-gray-500'
                         }`}>
-                          <Calendar size={16} className="text-orange-500" />
+                          <Calendar size={16} className="text-[#4DABFF]" />
                           <span>{announcement.tanggal_dibuat}</span>
                         </div>
                         
                         <div className={`flex items-center space-x-2 ${
                           isDark ? 'text-gray-400' : 'text-gray-500'
                         }`}>
-                          <Clock size={16} className="text-orange-500" />
+                          <Clock size={16} className="text-[#4DABFF]" />
                           <span>{announcement.waktu_dibuat}</span>
                         </div>
                         
@@ -384,7 +384,7 @@ const Pengumuman = () => {
                     </div>
                     
                     <div className="ml-4">
-                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold ${
+                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#4DABFF] to-blue-600 flex items-center justify-center text-white font-bold ${
                         isDark ? 'shadow-lg' : 'shadow-md'
                       }`}>
                         <Megaphone size={20} />
@@ -405,13 +405,13 @@ const Pengumuman = () => {
                   <div className="flex items-center justify-between">
                     <span className={`text-xs px-3 py-1 rounded-full ${
                       isDark 
-                        ? 'bg-orange-500/20 text-orange-400' 
-                        : 'bg-orange-100 text-orange-600'
+                        ? 'bg-[#4DABFF]/20 text-[#4DABFF]' 
+                        : 'bg-[#4DABFF]/10 text-[#4DABFF]'
                     }`}>
                       #{startIndex + index + 1}
                     </span>
                     
-                    <div className="flex items-center space-x-2 text-sm text-orange-500">
+                    <div className="flex items-center space-x-2 text-sm text-[#4DABFF]">
                       <Eye size={16} />
                       <span className="font-medium">Baca Selengkapnya</span>
                     </div>
@@ -466,7 +466,7 @@ const Pengumuman = () => {
                           onClick={() => setCurrentPage(page)}
                           className={`px-3 py-1 rounded-lg text-sm transition-colors ${
                             currentPage === page
-                              ? 'bg-orange-500 text-white'
+                              ? 'bg-[#4DABFF] text-white'
                               : isDark 
                                 ? 'text-gray-300 hover:bg-gray-700' 
                                 : 'text-gray-600 hover:bg-gray-100'

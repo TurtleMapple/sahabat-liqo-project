@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ChevronLeft, ChevronRight, Mail, Lock, Loader2 } from 'lucide-react';
 import { login } from '../../api/auth';
 import toast, { Toaster } from 'react-hot-toast';
@@ -14,6 +14,7 @@ import { getAuthData } from '../../utils/authHelper';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ============================================
   // STATE MANAGEMENT
@@ -62,24 +63,26 @@ const Login = () => {
   // Main description text
   const mainDescription = "Program mentoring Shaf Pembangunan bertujuan membimbing generasi muda dalam pengembangan karakter, spiritualitas, dan kepemimpinan untuk Indonesia Emas 2025.";
 
+  // Helper function to get dashboard path
+  const getDashboardPath = (role) => {
+    switch (role) {
+      case "super_admin":
+        return "/superadmin/dashboard";
+      case "admin":
+        return "/admin/dashboard";
+      case "mentor":
+        return "/mentor/dashboard";
+      default:
+        return "/login";
+    }
+  };
+
   // ============================================
   // CHECK IF ALREADY LOGGED IN
   // ============================================
   useEffect(() => {
     const authData = getAuthData();
     if (authData?.token && authData?.user?.role) {
-      const getDashboardPath = (role) => {
-        switch (role) {
-          case "super_admin":
-            return "/superadmin/dashboard";
-          case "admin":
-            return "/admin/dashboard";
-          case "mentor":
-            return "/mentor/dashboard";
-          default:
-            return "/login";
-        }
-      };
       navigate(getDashboardPath(authData.user.role), { replace: true });
     }
   }, [navigate]);
@@ -128,20 +131,48 @@ const Login = () => {
           });
         }, 500);
         
-        // Redirect to appropriate dashboard
-        if (user && user.role === 'super_admin') {
-          navigate('/superadmin/dashboard');
-        } else if (user && user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (user && user.role === 'mentor') {
-          navigate('/mentor/dashboard');
+        // Redirect to return URL or appropriate dashboard
+        const from = location.state?.from?.pathname;
+        let redirectTo;
+        
+        if (from && from !== '/login') {
+          // Check if user has access to the requested page
+          const hasAccess = (
+            (user.role === 'super_admin' && from.startsWith('/superadmin')) ||
+            (user.role === 'admin' && from.startsWith('/admin')) ||
+            (user.role === 'mentor' && from.startsWith('/mentor'))
+          );
+          
+          redirectTo = hasAccess ? from : getDashboardPath(user.role);
         } else {
-          navigate('/dashboard'); // fallback
+          redirectTo = getDashboardPath(user.role);
         }
+        
+        navigate(redirectTo, { replace: true });
       }, 2000);
 
     } catch (err) {
-      console.log('Login error:', err.response?.data); // Debug log
+      console.log('Login error full:', err); // Debug log
+      console.log('Login error response:', err.response); // Debug log
+      console.log('Login error data:', err.response?.data); // Debug log
+      console.log('Login error status:', err.response?.status); // Debug log
+      
+      // Check for blocked account first (regardless of status code)
+      const errorMessage = err.response?.data?.message || '';
+      if (errorMessage.toLowerCase().includes('diblokir') || errorMessage.toLowerCase().includes('blocked')) {
+        setBlockedMessage(errorMessage);
+        setBlockedAt(err.response?.data?.blocked_at || '');
+        setShowBlockedModal(true);
+        toast.error('🚫 Akun Anda telah diblokir', {
+          duration: 5000,
+          style: {
+            background: '#FEF2F2',
+            color: '#DC2626',
+            border: '1px solid #FECACA'
+          }
+        });
+        return;
+      }
       
       if (err.response && err.response.status === 422) {
         const errorData = err.response.data;

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\AdminStoreRequest;
 use App\Http\Requests\AdminUpdateRequest;
 
@@ -108,6 +109,7 @@ class AdminController extends Controller
             Profile::create([
                 'user_id' => $user->id,
                 'full_name' => $request->full_name,
+                'gender' => $request->gender,
                 'nickname' => $request->nickname,
                 'birth_date' => $request->birth_date,
                 'phone_number' => $request->phone_number,
@@ -187,6 +189,7 @@ class AdminController extends Controller
             // Prepare profile data
             $profileData = [
                 'full_name' => $request->full_name,
+                'gender' => $request->gender,
                 'nickname' => $request->nickname,
                 'birth_date' => $request->birth_date,
                 'phone_number' => $request->phone_number,
@@ -196,6 +199,11 @@ class AdminController extends Controller
                 'status' => $request->status ?? 'Aktif',
                 'status_note' => $request->status_note,
             ];
+
+            // Clear status_note if status is not Non-Aktif
+            if ($request->status !== 'Non-Aktif') {
+                $profileData['status_note'] = null;
+            }
 
             // Handle profile picture upload
             $profilePicturePath = $this->handleProfilePictureUpload(
@@ -275,6 +283,13 @@ class AdminController extends Controller
         }
 
         $admin->update(['blocked_at' => now()]);
+        
+        // Log for debugging
+        Log::info('Admin blocked', [
+            'admin_id' => $admin->id,
+            'admin_email' => $admin->email,
+            'blocked_at' => $admin->blocked_at
+        ]);
 
         return response()->json([
             'status' => 'success',

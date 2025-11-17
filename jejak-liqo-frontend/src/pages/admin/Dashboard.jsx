@@ -10,6 +10,9 @@ import { Sparkles, Users, UserCheck, UsersRound, FileText, TrendingUp, Loader2, 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
+import { downloadMenteeTemplate } from '../../api/import';
+import { downloadMentorTemplate } from '../../api/mentorImport';
+import { downloadGroupTemplate } from '../../api/groupImport';
 
 const AdminDashboard = () => {
   const { isDark } = useTheme();
@@ -23,6 +26,30 @@ const AdminDashboard = () => {
   const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [trendLoading, setTrendLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(true);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
+  const handleDownloadTemplate = async (type) => {
+    try {
+      setDownloadLoading(true);
+      if (type === 'mentee') {
+        await downloadMenteeTemplate();
+        toast.success('Template Mentee berhasil didownload');
+      } else if (type === 'mentor') {
+        await downloadMentorTemplate();
+        toast.success('Template Mentor berhasil didownload');
+      } else if (type === 'kelompok') {
+        await downloadGroupTemplate();
+        toast.success('Template Kelompok berhasil didownload');
+      } else {
+        toast.info(`Template ${type} akan segera tersedia`);
+      }
+    } catch (error) {
+      toast.error(`Gagal download template ${type}`);
+      console.error(error);
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
 
   const getCurrentTime = () => {
     const hour = new Date().getHours();
@@ -472,6 +499,57 @@ const AdminDashboard = () => {
             
             {/* Right Column - Quick Actions & Calendar */}
             <div className="space-y-8">
+              {/* Download Templates */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className={`rounded-2xl p-6 transition-colors duration-300 ${
+                  isDark ? 'bg-gray-800' : 'bg-white'
+                } shadow-sm`}
+              >
+                <h3 className={`text-lg font-semibold mb-4 ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Download Template Import
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  <button 
+                    onClick={() => handleDownloadTemplate('mentee')}
+                    disabled={downloadLoading}
+                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all disabled:opacity-50 ${
+                    isDark 
+                      ? 'bg-blue-900/20 hover:bg-blue-900/30 text-blue-400 border border-blue-800' 
+                      : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
+                  }`}>
+                    <FileText className="w-4 h-4" />
+                    <span className="text-sm font-medium">{downloadLoading ? 'Downloading...' : 'Template Mentee'}</span>
+                  </button>
+                  <button 
+                    onClick={() => handleDownloadTemplate('mentor')}
+                    disabled={downloadLoading}
+                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all disabled:opacity-50 ${
+                    isDark 
+                      ? 'bg-green-900/20 hover:bg-green-900/30 text-green-400 border border-green-800' 
+                      : 'bg-green-50 hover:bg-green-100 text-green-600 border border-green-200'
+                  }`}>
+                    <FileText className="w-4 h-4" />
+                    <span className="text-sm font-medium">Template Mentor</span>
+                  </button>
+                  <button 
+                    onClick={() => handleDownloadTemplate('kelompok')}
+                    disabled={downloadLoading}
+                    className={`flex items-center space-x-3 p-3 rounded-lg transition-all disabled:opacity-50 ${
+                    isDark 
+                      ? 'bg-purple-900/20 hover:bg-purple-900/30 text-purple-400 border border-purple-800' 
+                      : 'bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200'
+                  }`}>
+                    <FileText className="w-4 h-4" />
+                    <span className="text-sm font-medium">Template Kelompok</span>
+                  </button>
+                </div>
+              </motion.div>
+
               {/* Quick Actions */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

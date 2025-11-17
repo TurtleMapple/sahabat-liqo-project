@@ -81,8 +81,14 @@ class ProfileController extends Controller
                 'gender' => $request->gender,
             ];
 
-            // Handle profile picture upload
-            if ($request->hasFile('profile_picture')) {
+            // Handle profile picture upload or removal
+            if ($request->has('remove_profile_picture')) {
+                // Delete old profile picture if exists
+                if ($user->profile && $user->profile->profile_picture) {
+                    Storage::disk('public')->delete($user->profile->profile_picture);
+                }
+                $profileData['profile_picture'] = null;
+            } elseif ($request->hasFile('profile_picture')) {
                 // Delete old profile picture if exists
                 if ($user->profile && $user->profile->profile_picture) {
                     Storage::disk('public')->delete($user->profile->profile_picture);

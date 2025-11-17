@@ -34,7 +34,7 @@ const Settings = () => {
       if (data.status === 'success') {
         setProfile(data.data);
         setEditData({
-          name: data.data.profile?.name || '',
+          full_name: data.data.profile?.full_name || '',
           nickname: data.data.profile?.nickname || '',
           phone_number: data.data.profile?.phone_number || '',
           job: data.data.profile?.job || '',
@@ -55,7 +55,7 @@ const Settings = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setEditData({
-      name: profile.profile?.name || '',
+      full_name: profile.profile?.full_name || '',
       nickname: profile.profile?.nickname || '',
       phone_number: profile.profile?.phone_number || '',
       job: profile.profile?.job || '',
@@ -138,12 +138,12 @@ const Settings = () => {
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editData.name}
-                        onChange={(e) => setEditData({...editData, name: e.target.value})}
+                        value={editData.full_name}
+                        onChange={(e) => setEditData({...editData, full_name: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       />
                     ) : (
-                      <p className="text-gray-900 dark:text-white">{profile.profile?.name || 'Tidak ada data'}</p>
+                      <p className="text-gray-900 dark:text-white">{profile.profile?.full_name || 'Tidak ada data'}</p>
                     )}
                   </div>
                   <div>

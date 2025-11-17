@@ -4,6 +4,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../../../components/admin/Layout';
 import { ArrowLeft, Users, UserCheck, AlertCircle, Lightbulb, Search } from 'lucide-react';
+import { DocumentTextIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import api from '../../../api/axiosInstance';
 import { getAvailableMentors, getAvailableMentees, getMentorGender, createGroup, getAllMenteesForGroupForm } from '../../../api/groups';
@@ -87,7 +88,7 @@ const TambahKelompok = () => {
           .filter(mentor => mentor.profile?.gender === selectedGender)
           .map(mentor => ({
             id: mentor.id,
-            name: mentor.name || mentor.email || `Mentor #${mentor.id}`,
+            name: mentor.profile?.full_name || mentor.email || `Mentor #${mentor.id}`,
             gender: mentor.profile?.gender || mentor.gender
           }));
         setMentors(transformedData);
@@ -167,7 +168,8 @@ const TambahKelompok = () => {
         group_name: formData.group_name,
         description: formData.description || null,
         mentor_id: formData.mentor_id,
-        mentee_ids: formData.mentee_ids.length > 0 ? formData.mentee_ids : null
+        mentee_ids: formData.mentee_ids.length > 0 ? formData.mentee_ids : null,
+        gender: selectedGender
       };
       
       await createGroup(groupData);
@@ -176,8 +178,16 @@ const TambahKelompok = () => {
     } catch (error) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        errorMessages.forEach(message => {
+          toast.error(message);
+        });
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
       } else {
-        toast.error(error.response?.data?.message || 'Gagal membuat kelompok');
+        toast.error('Gagal membuat kelompok');
       }
     } finally {
       setLoading(false);
@@ -233,8 +243,9 @@ const TambahKelompok = () => {
               <div className="space-y-8">
                 {/* Section 1: Informasi Dasar */}
                 <div>
-                  <h3 className={`text-lg font-semibold mb-4 pb-2 border-b ${isDark ? 'text-white border-gray-700' : 'text-gray-800 border-gray-200'}`}>
-                    📝 Informasi Dasar Kelompok
+                  <h3 className={`text-lg font-semibold mb-4 pb-2 border-b flex items-center ${isDark ? 'text-white border-gray-700' : 'text-gray-800 border-gray-200'}`}>
+                    <DocumentTextIcon className="w-5 h-5 mr-2" />
+                    Informasi Dasar Kelompok
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -308,14 +319,14 @@ const TambahKelompok = () => {
                             </div>
                           ) : mentors
                             .filter(mentor => 
-                              mentor.name.toLowerCase().includes(mentorSearch.toLowerCase())
+                              (mentor.name || mentor.profile?.full_name || '').toLowerCase().includes(mentorSearch.toLowerCase())
                             )
                             .map((mentor) => (
                               <div
                                 key={mentor.id}
                                 onClick={() => {
                                   setFormData({ ...formData, mentor_id: mentor.id });
-                                  setMentorSearch(`${mentor.name} (${mentor.gender})`);
+                                  setMentorSearch(`${mentor.name || mentor.profile?.full_name} (${mentor.gender})`);
                                   setShowMentorDropdown(false);
                                 }}
                                 className={`px-3 py-2 cursor-pointer transition-colors ${
@@ -324,7 +335,7 @@ const TambahKelompok = () => {
                                     : 'text-gray-900 hover:bg-gray-100'
                                 } ${formData.mentor_id == mentor.id ? (isDark ? 'bg-blue-900/20' : 'bg-blue-100') : ''}`}
                               >
-                                <div className="font-medium">{mentor.name}</div>
+                                <div className="font-medium">{mentor.name || mentor.profile?.full_name}</div>
                                 <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                   {mentor.gender}
                                 </div>
@@ -332,7 +343,7 @@ const TambahKelompok = () => {
                             ))
                           }
                           {mentors.filter(mentor => 
-                            mentor.name.toLowerCase().includes(mentorSearch.toLowerCase())
+                            (mentor.name || mentor.profile?.full_name || '').toLowerCase().includes(mentorSearch.toLowerCase())
                           ).length === 0 && mentors.length > 0 && (
                             <div className={`px-3 py-2 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                               Tidak ada mentor ditemukan
@@ -374,7 +385,7 @@ const TambahKelompok = () => {
                         <UserCheck className={`${isDark ? 'text-blue-400' : 'text-blue-600'}`} size={24} />
                         <div>
                           <div className={`font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
-                            {selectedMentor.name}
+                            {selectedMentor.name || selectedMentor.profile?.full_name}
                           </div>
                           <div className={`text-sm ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                             Mentor {selectedGender}
@@ -604,7 +615,7 @@ const TambahKelompok = () => {
                     {formData.group_name ? (
                       <span className="ml-1">
                         Kelompok "{formData.group_name}" 
-                        {selectedMentor && `dengan mentor ${selectedMentor.name}`}
+                        {selectedMentor && `dengan mentor ${selectedMentor.name || selectedMentor.profile?.full_name}`}
                         {formData.mentee_ids.length > 0 && ` dan ${formData.mentee_ids.length} mentee`}
                       </span>
                     ) : (

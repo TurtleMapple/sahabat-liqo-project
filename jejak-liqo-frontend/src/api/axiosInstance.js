@@ -24,6 +24,12 @@ api.interceptors.request.use(
       }
       config.headers.Authorization = `Bearer ${authData.token}`;
     }
+    
+    // Remove Content-Type for FormData to let browser set it automatically
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)

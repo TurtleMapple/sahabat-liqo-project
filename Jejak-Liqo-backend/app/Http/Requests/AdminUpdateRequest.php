@@ -25,9 +25,9 @@ class AdminUpdateRequest extends FormRequest
             'address' => 'nullable|string',
             'job' => 'nullable|string|max:255',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'nullable|string|max:255',
-            'status_note' => 'nullable|string',
-            'gender' => 'nullable|in:Ikhwan,Akhwat',
+            'status' => 'required|in:Aktif,Non-Aktif',
+            'status_note' => 'required_if:status,Non-Aktif|nullable|string',
+            'gender' => 'required|in:Ikhwan,Akhwat',
         ];
     }
 
@@ -39,6 +39,11 @@ class AdminUpdateRequest extends FormRequest
             'email.unique' => 'Email has already been taken',
             'password.min' => 'Password must be at least 8 characters',
             'full_name.required' => 'Full name is required',
+            'gender.required' => 'Gender is required',
+            'gender.in' => 'Gender must be either Ikhwan or Akhwat',
+            'status.required' => 'Status is required',
+            'status.in' => 'Status must be either Aktif or Non-Aktif',
+            'status_note.required_if' => 'Status note is required when status is Non-Aktif',
             'profile_picture.image' => 'Profile picture must be an image',
             'profile_picture.mimes' => 'Profile picture must be a file of type: jpeg, png, jpg, gif',
             'profile_picture.max' => 'Profile picture may not be greater than 2MB',

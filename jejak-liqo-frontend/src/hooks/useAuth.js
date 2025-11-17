@@ -1,12 +1,13 @@
 // src/hooks/useAuth.js
 import { useState, useEffect, useRef } from "react";
-import { getAuthData } from "../utils/authHelper"; 
+import { getAuthData, clearAuthData } from "../utils/authHelper"; 
 
 const useAuth = () => {
   const [authState, setAuthState] = useState({
     role: null,
     isAuthenticated: false,
-    loading: true
+    loading: true,
+    user: null
   });
   
   const hasInitialized = useRef(false);
@@ -20,17 +21,39 @@ const useAuth = () => {
       try {
         const authData = getAuthData();
         
-        setAuthState({
-          role: authData?.user?.role || null,
-          isAuthenticated: !!(authData?.token && authData?.user?.role),
-          loading: false
-        });
+        // Validate role
+        const validRoles = ['super_admin', 'admin', 'mentor'];
+        const isValidRole = authData?.user?.role && validRoles.includes(authData.user.role);
+        
+        if (authData?.token && isValidRole) {
+          setAuthState({
+            role: authData.user.role,
+            isAuthenticated: true,
+            loading: false,
+            user: authData.user
+          });
+        } else {
+          // Clear invalid auth data
+          if (authData?.token && !isValidRole) {
+            console.warn('Invalid role detected, clearing auth data');
+            clearAuthData();
+          }
+          
+          setAuthState({
+            role: null,
+            isAuthenticated: false,
+            loading: false,
+            user: null
+          });
+        }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        clearAuthData();
         setAuthState({
           role: null,
           isAuthenticated: false,
-          loading: false
+          loading: false,
+          user: null
         });
       }
     }, 50);

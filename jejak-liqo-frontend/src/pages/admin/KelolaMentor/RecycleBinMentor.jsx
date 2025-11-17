@@ -47,12 +47,16 @@ const RecycleBinMentor = () => {
   };
 
   const handleRestore = async (id) => {
+    // Optimistic update - remove from UI immediately
+    setMentors(prev => prev.filter(mentor => mentor.id !== id));
+    toast.success('Mentor berhasil dipulihkan');
+    
     try {
       await restoreMentor(id);
-      toast.success('Mentor berhasil dipulihkan');
-      fetchDeletedMentors();
     } catch (error) {
       toast.error('Gagal memulihkan mentor');
+      // Refresh on error
+      fetchDeletedMentors();
     }
   };
 
@@ -116,37 +120,35 @@ const RecycleBinMentor = () => {
 
   const handleBulkRestore = async () => {
     if (selectedMentors.length === 0) return;
+    
+    // Optimistic update - remove from UI immediately
+    const restoredIds = [...selectedMentors];
+    setMentors(prev => prev.filter(mentor => !restoredIds.includes(mentor.id)));
+    setSelectedMentors([]);
+    toast.success(`${restoredIds.length} mentor berhasil dipulihkan`);
+    
     try {
-      await Promise.all(selectedMentors.map(id => restoreMentor(id)));
-      toast.success(`${selectedMentors.length} mentor berhasil dipulihkan`);
-      setSelectedMentors([]);
-      fetchDeletedMentors();
+      await Promise.all(restoredIds.map(id => restoreMentor(id)));
     } catch (error) {
       toast.error('Gagal memulihkan beberapa mentor');
+      // Refresh on error
+      fetchDeletedMentors();
     }
   };
 
   const handleBulkForceDelete = async () => {
     if (selectedMentors.length === 0) return;
     
-    try {
-      const infoPromises = selectedMentors.map(id => getMentorForceInfo(id));
-      const infoResponses = await Promise.all(infoPromises);
-      const mentorsWithGroups = infoResponses.filter(response => response.data.has_groups);
-      
-      const bulkInfo = {
-        total_mentors: selectedMentors.length,
-        mentors_with_groups: mentorsWithGroups.length,
-        mentor_details: mentorsWithGroups.map(response => response.data)
-      };
-      
-      setForceDeleteInfo(bulkInfo);
-      setForceDeleteType('bulk');
-      setShowForceDeleteModal(true);
-    } catch (error) {
-      console.error('Bulk force delete error:', error);
-      toast.error('Gagal menghapus mentor');
-    }
+    // Show modal immediately with basic info
+    const bulkInfo = {
+      total_mentors: selectedMentors.length,
+      mentors_with_groups: 0,
+      mentor_details: []
+    };
+    
+    setForceDeleteInfo(bulkInfo);
+    setForceDeleteType('bulk');
+    setShowForceDeleteModal(true);
   };
 
   const formatDate = (dateString) => {
@@ -648,34 +650,11 @@ const RecycleBinMentor = () => {
                         </h4>
                       </div>
 
-                      {forceDeleteInfo.mentors_with_groups > 0 ? (
-                        <div className={`p-4 rounded-lg border-2 border-red-200 ${isDark ? 'bg-red-900/20' : 'bg-red-50'}`}>
-                          <h4 className={`font-semibold text-red-600 mb-2 flex items-center`}>
-                            <span className="mr-2">⚠️</span>
-                            PERINGATAN!
-                          </h4>
-                          <p className={`${isDark ? 'text-red-300' : 'text-red-700'} mb-3`}>
-                            {forceDeleteInfo.mentors_with_groups} dari {forceDeleteInfo.total_mentors} mentor masih memiliki kelompok.
-                            Jika dihapus, kelompok akan tetap ada tapi tanpa mentor.
-                          </p>
-                          <div className={`${isDark ? 'text-red-300' : 'text-red-700'}`}>
-                            <p className="font-medium mb-2">Mentor dengan kelompok:</p>
-                            <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto">
-                              {forceDeleteInfo.mentor_details.map((detail, index) => (
-                                <li key={index}>
-                                  {detail.mentor.full_name || detail.mentor.email}: {detail.groups.length} kelompok
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`p-4 rounded-lg ${isDark ? 'bg-yellow-900/20' : 'bg-yellow-50'} border border-yellow-200`}>
-                          <p className={`${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                            Semua mentor yang dipilih tidak memiliki kelompok aktif.
-                          </p>
-                        </div>
-                      )}
+                      <div className={`p-4 rounded-lg ${isDark ? 'bg-yellow-900/20' : 'bg-yellow-50'} border border-yellow-200`}>
+                        <p className={`${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                          Semua mentor yang dipilih tidak memiliki kelompok aktif.
+                        </p>
+                      </div>
                     </>
                   )}
 

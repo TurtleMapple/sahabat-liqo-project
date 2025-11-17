@@ -58,6 +58,10 @@ const TambahMentee = () => {
       errors.full_name = 'Nama lengkap maksimal 255 karakter';
     }
     
+    if (!mentee.gender || mentee.gender.trim() === '') {
+      errors.gender = 'Jenis kelamin wajib dipilih';
+    }
+    
     return errors;
   };
 
@@ -78,6 +82,14 @@ const TambahMentee = () => {
     } catch (error) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        errorMessages.forEach(message => {
+          toast.error(message);
+        });
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
       } else {
         toast.error('Gagal menambahkan mentee');
       }
@@ -113,6 +125,14 @@ const TambahMentee = () => {
     } catch (error) {
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        errorMessages.forEach(message => {
+          toast.error(message);
+        });
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
       } else {
         toast.error('Gagal menambahkan mentee');
       }
@@ -189,19 +209,24 @@ const TambahMentee = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-            Jenis Kelamin
+            Jenis Kelamin <span className="text-red-500">*</span>
           </label>
           <select
             value={data.gender}
             onChange={(e) => onChange('gender', e.target.value)}
             className={`w-full px-3 py-2 rounded-lg border ${
               isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-            } focus:ring-2 focus:ring-blue-500`}
+            } focus:ring-2 focus:ring-blue-500 ${
+              errors[`${errorPrefix}gender`] ? 'border-red-500' : ''
+            }`}
           >
             <option value="">Pilih Jenis Kelamin</option>
             <option value="Ikhwan">Ikhwan (Laki-laki)</option>
             <option value="Akhwat">Akhwat (Perempuan)</option>
           </select>
+          {errors[`${errorPrefix}gender`] && (
+            <p className="text-red-500 text-sm mt-1">{errors[`${errorPrefix}gender`]}</p>
+          )}
         </div>
         <div>
           <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>

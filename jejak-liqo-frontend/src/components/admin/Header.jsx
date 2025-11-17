@@ -108,7 +108,7 @@ const Header = ({ toggleSidebar, onLogoutClick }) => {
                   {user?.profile?.full_name || user?.name || 'Admin'}
                 </p>
                 <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {user?.email || 'admin@jejakliqo.com'}
+                  {user?.email || 'Administrator'}
                 </p>
               </div>
               
@@ -145,7 +145,7 @@ const Header = ({ toggleSidebar, onLogoutClick }) => {
                   >
                     <div className="p-4 bg-gradient-to-r from-[#4DABFF] to-blue-600 text-white">
                       <p className="font-semibold">{user?.profile?.full_name || user?.name || 'Admin'}</p>
-                      <p className="text-sm text-blue-100">{user?.email || 'admin@jejakliqo.com'}</p>
+                      <p className="text-sm text-blue-100">{user?.email || 'Administrator'}</p>
                     </div>
                     <div className="py-2">
                       <button 

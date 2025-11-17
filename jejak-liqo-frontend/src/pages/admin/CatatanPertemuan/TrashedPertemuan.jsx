@@ -26,10 +26,15 @@ const TrashedPertemuan = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [selectedMeetings, setSelectedMeetings] = useState([]);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showBulkRestoreModal, setShowBulkRestoreModal] = useState(false);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkRestoring, setIsBulkRestoring] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchTrashedMeetings();
@@ -90,6 +95,52 @@ const TrashedPertemuan = () => {
     }
   };
 
+  const handleBulkRestore = async () => {
+    try {
+      setIsBulkRestoring(true);
+      await meetingsAPI.bulkRestoreMeetings(selectedMeetings);
+      toast.success(`${selectedMeetings.length} catatan pertemuan berhasil dipulihkan`);
+      setShowBulkRestoreModal(false);
+      setSelectedMeetings([]);
+      fetchTrashedMeetings();
+    } catch (error) {
+      console.error('Error bulk restoring meetings:', error);
+      toast.error('Gagal memulihkan beberapa catatan pertemuan');
+    } finally {
+      setIsBulkRestoring(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      setIsBulkDeleting(true);
+      await meetingsAPI.bulkForceDeleteMeetings(selectedMeetings);
+      toast.success(`${selectedMeetings.length} catatan pertemuan berhasil dihapus permanen`);
+      setShowBulkDeleteModal(false);
+      setSelectedMeetings([]);
+      fetchTrashedMeetings();
+    } catch (error) {
+      console.error('Error bulk deleting meetings:', error);
+      toast.error('Gagal menghapus beberapa catatan pertemuan secara permanen');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const toggleSelectMeeting = (meetingId) => {
+    setSelectedMeetings(prev => 
+      prev.includes(meetingId)
+        ? prev.filter(id => id !== meetingId)
+        : [...prev, meetingId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedMeetings(prev => 
+      prev.length === meetings.length ? [] : meetings.map(m => m.id)
+    );
+  };
+
   const getTypeIcon = (type) => {
     switch (type) {
       case 'Online':
@@ -133,51 +184,111 @@ const TrashedPertemuan = () => {
       <div className="p-3 sm:p-6">
         {/* Header */}
         <motion.div 
-          className="flex items-center space-x-4 mb-6"
+          className="flex items-center justify-between mb-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <button
-            onClick={() => navigate('/admin/catatan-pertemuan')}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark 
-                ? 'hover:bg-gray-700 text-gray-400 hover:text-white' 
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              Pertemuan Terhapus
-            </h1>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Kelola catatan pertemuan yang telah dihapus
-            </p>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/admin/catatan-pertemuan')}
+              className={`p-2 rounded-lg transition-colors ${
+                isDark 
+                  ? 'hover:bg-gray-700 text-gray-400 hover:text-white' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <ArrowLeftIcon className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                Pertemuan Terhapus
+              </h1>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Kelola catatan pertemuan yang telah dihapus
+              </p>
+            </div>
           </div>
+          
+          {selectedMeetings.length > 0 && (
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowBulkRestoreModal(true)}
+                className={`flex items-center space-x-1 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                  isDark 
+                    ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' 
+                    : 'bg-green-50 text-green-700 hover:bg-green-100'
+                }`}
+              >
+                <ArrowPathIcon className="w-4 h-4" />
+                <span className="text-sm whitespace-nowrap">Pulihkan ({selectedMeetings.length})</span>
+              </button>
+              
+              <button
+                onClick={() => setShowBulkDeleteModal(true)}
+                className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' 
+                    : 'bg-red-50 text-red-700 hover:bg-red-100'
+                }`}
+                style={{ flex: '0 0 30%' }}
+              >
+                <TrashIcon className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </motion.div>
+
+
 
         {/* Search */}
         <motion.div 
           className={`p-4 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-white'} shadow-sm mb-6`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <div className="relative">
-            <MagnifyingGlassIcon className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
-            <input
-              type="text"
-              placeholder="Cari topik, tempat, atau kelompok..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg border transition-colors ${
-                isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <MagnifyingGlassIcon className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+              <input
+                type="text"
+                placeholder="Cari topik, tempat, atau kelompok..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 rounded-lg border transition-colors ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              />
+            </div>
+            
+            {meetings.length > 0 && (
+              <button
+                onClick={toggleSelectAll}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                  selectedMeetings.length === meetings.length
+                    ? 'bg-blue-500 text-white'
+                    : isDark 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                  selectedMeetings.length === meetings.length
+                    ? 'bg-white border-white'
+                    : 'border-current'
+                }`}>
+                  {selectedMeetings.length === meetings.length && (
+                    <div className="w-full h-full rounded-full bg-blue-500 scale-50"></div>
+                  )}
+                </div>
+                <span>
+                  {selectedMeetings.length === meetings.length ? 'Batalkan Semua' : 'Pilih Semua'}
+                </span>
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -193,23 +304,31 @@ const TrashedPertemuan = () => {
             <p>Semua catatan pertemuan masih aktif</p>
           </div>
         ) : (
-          <motion.div 
-            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            {meetings.map((meeting) => (
-              <motion.div
-                key={meeting.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-6 rounded-2xl shadow-sm border ${
-                  isDark 
-                    ? 'bg-gray-800 border-gray-700 hover:shadow-lg hover:border-gray-600' 
-                    : 'bg-white border-gray-200 hover:shadow-md hover:border-gray-300'
-                } transition-all duration-200 opacity-75`}
-              >
+          <>
+
+
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+            >
+            {meetings.map((meeting) => {
+              const isSelected = selectedMeetings.includes(meeting.id);
+              
+              return (
+                <motion.div
+                  key={meeting.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-6 rounded-2xl shadow-sm border transition-all duration-200 opacity-75 ${
+                    isSelected
+                      ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
+                      : isDark 
+                        ? 'bg-gray-800 border-gray-700 hover:shadow-lg hover:border-gray-600' 
+                        : 'bg-white border-gray-200 hover:shadow-md hover:border-gray-300'
+                  }`}
+                >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -232,6 +351,22 @@ const TrashedPertemuan = () => {
                       {meeting.group?.name}
                     </p>
                   </div>
+                  
+                  {/* Bulk Selector */}
+                  <button
+                    onClick={() => toggleSelectMeeting(meeting.id)}
+                    className={`w-5 h-5 rounded-full border-2 transition-all ${
+                      selectedMeetings.includes(meeting.id)
+                        ? 'bg-blue-500 border-blue-500'
+                        : isDark 
+                          ? 'border-gray-600 hover:border-gray-500' 
+                          : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {selectedMeetings.includes(meeting.id) && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </button>
                 </div>
 
                 {/* Meeting Info */}
@@ -274,11 +409,12 @@ const TrashedPertemuan = () => {
                       setSelectedMeeting(meeting);
                       setShowRestoreModal(true);
                     }}
-                    className={`flex-1 flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
                       isDark 
                         ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' 
                         : 'bg-green-50 text-green-700 hover:bg-green-100'
                     }`}
+                    style={{ flex: '0 0 70%' }}
                   >
                     <ArrowPathIcon className="w-4 h-4" />
                     <span className="text-sm">Pulihkan</span>
@@ -289,18 +425,21 @@ const TrashedPertemuan = () => {
                       setSelectedMeeting(meeting);
                       setShowDeleteModal(true);
                     }}
-                    className={`px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center justify-center px-3 py-2 rounded-lg transition-colors ${
                       isDark 
                         ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' 
                         : 'bg-red-50 text-red-700 hover:bg-red-100'
                     }`}
+                    style={{ flex: '0 0 30%' }}
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
+                </motion.div>
+              );
+            })}
+            </motion.div>
+          </>
         )}
 
         <MeetingRestoreModal
@@ -370,6 +509,123 @@ const TrashedPertemuan = () => {
                     }`}
                   >
                     {isDeleting ? 'Menghapus...' : 'Hapus Permanen'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Bulk Restore Modal */}
+        {showBulkRestoreModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`w-full max-w-md rounded-2xl shadow-xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}
+            >
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className={`p-3 rounded-full ${isDark ? 'bg-green-500/20' : 'bg-green-100'}`}>
+                    <ArrowPathIcon className={`w-6 h-6 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Pulihkan Pertemuan
+                    </h3>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Pulihkan {selectedMeetings.length} catatan pertemuan
+                    </p>
+                  </div>
+                </div>
+                
+                <div className={`p-4 rounded-xl mb-6 ${isDark ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-200'}`}>
+                  <p className={`text-sm ${isDark ? 'text-green-300' : 'text-green-700'}`}>
+                    Catatan pertemuan yang dipilih akan dipulihkan dan dapat diakses kembali di halaman utama.
+                  </p>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowBulkRestoreModal(false)}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors ${
+                      isDark 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleBulkRestore}
+                    disabled={isBulkRestoring}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition-colors ${
+                      isBulkRestoring
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-green-500 hover:bg-green-600'
+                    }`}
+                  >
+                    {isBulkRestoring ? 'Memulihkan...' : 'Pulihkan'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Bulk Delete Modal */}
+        {showBulkDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`w-full max-w-md rounded-2xl shadow-xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}
+            >
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className={`p-3 rounded-full ${isDark ? 'bg-red-500/20' : 'bg-red-100'}`}>
+                    <TrashIcon className={`w-6 h-6 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Hapus Permanen
+                    </h3>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Hapus {selectedMeetings.length} catatan pertemuan secara permanen
+                    </p>
+                  </div>
+                </div>
+                
+                <div className={`p-4 rounded-xl mb-6 ${isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'}`}>
+                  <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'} mb-2 font-semibold`}>
+                    ⚠️ Peringatan!
+                  </p>
+                  <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>
+                    Tindakan ini akan menghapus {selectedMeetings.length} catatan pertemuan secara permanen dan tidak dapat dibatalkan.
+                  </p>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowBulkDeleteModal(false)}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium transition-colors ${
+                      isDark 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={isBulkDeleting}
+                    className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition-colors ${
+                      isBulkDeleting
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-red-500 hover:bg-red-600'
+                    }`}
+                  >
+                    {isBulkDeleting ? 'Menghapus...' : 'Hapus Permanen'}
                   </button>
                 </div>
               </div>

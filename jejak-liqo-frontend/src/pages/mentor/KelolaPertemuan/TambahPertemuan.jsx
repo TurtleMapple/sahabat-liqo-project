@@ -439,7 +439,7 @@ const TambahPertemuan = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {mentee.full_name || mentee.name}
+                            {mentee.full_name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {mentee.nickname || 'Tidak ada panggilan'}
